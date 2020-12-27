@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node>
+<version>6</version>
+<dict>
+  <key>title</key><string>test_bus.c</string>
+  <key>payload_filename</key><string>test_bus.c</string>
+  <key>nodeid</key><string>9e2139ad-43f8-4ae2-8290-925818ab925c</string>
+  <key>modified_time</key><integer>1584894299</integer>
+  <key>order</key><integer>0</integer>
+  <key>version</key><integer>6</integer>
+  <key>content_type</key><string>text/plain</string>
+  <key>created_time</key><integer>1583157174</integer>
+</dict>
+</node>

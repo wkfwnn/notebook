@@ -1,0 +1,320 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>linux 系统初始化标识</title>
+</head><body><br/>
+#define pure_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("0",fn,0) &nbsp;<br/>
+#define core_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("1",fn,1) &nbsp;<br/>
+#define core_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("1s",fn,1s) &nbsp;<br/>
+#define postcore_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("2",fn,2) &nbsp;<br/>
+#define postcore_initcall_sync(fn) &nbsp; &nbsp; &nbsp;__define_initcall("2s",fn,2s) &nbsp;<br/>
+#define arch_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("3",fn,3) &nbsp;<br/>
+#define arch_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("3s",fn,3s) &nbsp;<br/>
+#define subsys_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("4",fn,4) &nbsp;<br/>
+#define subsys_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("4s",fn,4s) &nbsp;<br/>
+#define fs_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("5",fn,5) &nbsp;<br/>
+#define fs_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("5s",fn,5s) &nbsp;<br/>
+#define rootfs_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("rootfs",fn,rootfs) &nbsp;<br/>
+#define device_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("6",fn,6) &nbsp;<br/>
+#define device_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("6s",fn,6s) &nbsp;<br/>
+#define late_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("7",fn,7) &nbsp;<br/>
+#define late_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("7s",fn,7s) <br/>
+&nbsp;<br/>
+这样level小的初始化函数先于level大的初始化函数被调用，例如postcore_initcall 定义为2，就要优先于arch_initcall(定义为3)<br/>
+<br/>
+<div style="text-align: left">#define module_init(x) &nbsp;__initcall(x);</div><br/>
+<div style="text-align: left">#define__initcall(fn) device_initcall(fn)<br/>
+<br/>
+#define pure_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("0",fn,1) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; //纯粹的初始化调用<br/>
+<br/>
+#define core_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("1",fn,1) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; //主要的初始化调用<br/>
+#define core_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("1s",fn,1s)<br/>
+#define postcore_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("2",fn,2) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;//相对次要的初始化调用<br/>
+#define postcore_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("2s",fn,2s)<br/>
+#define arch_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("3",fn,3) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;//与硬件架构相关平台设备的初始化调用<br/>
+#define arch_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("3s",fn,3s)<br/>
+#define subsys_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("4",fn,4)<br/>
+#define subsys_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("4s",fn,4s)<br/>
+#define fs_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("5",fn,5)<br/>
+#define fs_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("5s",fn,5s)<br/>
+#define rootfs_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("rootfs",fn,rootfs)<br/>
+#define device_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("6",fn,6)<br/>
+#define device_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("6s",fn,6s)<br/>
+#define late_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("7",fn,7) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;//晚的初始化调用<br/>
+#define late_initcall_sync(fn) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;__define_initcall("7s",fn,7s)<br/>
+<br/>
+#define module_init(x)__initcall(x);<br/>
+<br/>
+#define__initcall(fn)device_initcall(fn)<br/>
+<br/>
+&nbsp;<br/>
+<br/>
+在上面的不同的优先级中，<br/>
+数字越小，优先级越高。<br/>
+同一等级的优先级的驱动，加载顺序是链接过程决定的，结果是不确定的，我们无法去手动设置谁先谁后。<br/>
+不同等级的驱动加载的顺序是先优先级高，后优先级低，这是可以确定的。<br/>
+<br/>
+所以，late_initcall还要在module_init的后面<br/>
+<br/>
+&nbsp;<br/>
+<br/>
+所有的__init函数在区段.init.text区段中，同时还在.initcall.init中还保存了一份函数指针，<br/>
+在初始化时内核会通过这些函数指针调用这些__init函数指针，<br/>
+并在整个初始化完成后，释放整个init区段（包括.init.text，.initcall.init等）。<br/>
+&nbsp;<br/>
+这些函数在内核初始化过程中的调用顺序只和这里的函数指针的顺序有关<br/>
+<br/>
+中所述的这些函数本身在.init.text区段中的顺序无关。<br/>
+<br/>
+在2.6内核中，initcall.init区段又分成7个子区段<br/>
+<br/>
+不同的区段，调用的顺序不一样，数字越小的优先级越高。<br/>
+<br/>
+&nbsp;<br/>
+<br/>
+&nbsp;<br/>
+<br/>
+详细解说：<br/>
+<br/>
+在内核源代码中，platform设备的初始化（注册）用arch_initcall（）调用，它的initcall的level为3；<br/>
+<br/>
+&nbsp;<br/>
+<br/>
+而驱动的注册用module_init（）调用，即device_initcall（），它的initcall的level为6。<br/>
+<br/>
+#definemodule_init(x)__initcall(x);<br/>
+<br/>
+#define__initcall(fn)device_initcall(fn)<br/>
+<br/>
+<br/>
+阶段二：<br/>
+<br/>
+在linux系统中：<br/>
+&nbsp;Linux系统启动过程很复杂，因为它既需要支持模块静态加载机制也要支持动态加载机制。模块动态加载机制给系统提供了极大的灵活性，驱动程序既可支持静态编译进内核，也可以支持动态加载机制。Linux系统中对设备和子系统的初始化在最后进行，主要过程可以用下图表示。<br/>
+<img src="无标题.png" /><br/>
+<br/>
+<br/>
+图1<br/>
+<br/>
+进入子系统初始化时，在内核init进程中进行设备初始化，最为复杂、诡异的机制莫过于do_initcalls()函数调用，该函数完成了所有需要静态加载模块的初始化，需要进行静态加载的内核模块，需要使用一些特定的宏进行处理，下面详细来说明一些linux内核中initcalls机制。<br/>
+<br/>
+先来看看do_initcalls()函数原型：<br/>
+<img src="无标题 2.png" /><br/>
+<br/>
+图2<br/>
+<br/>
+核心部分是639~671之间，该部分是一个函数指针调用，遍历_initcall_start~_initcall_end范围，逐个调用函数指针。<br/>
+<br/>
+那_initcall_start~_initcall_end之间存放的是什么呢，可以以下面一幅示意图来说明。<br/>
+<br/>
+<img src="无标题 3.png" /><br/>
+图3<br/>
+<br/>
+图左边是地址指针，右边是相关宏，使用相关宏处理函数指针，可以将被处理的函数指针放在特定的指针范围内。例如，网络设备层初始化函数是net_dev_init()，定义在net/core/dev.c中，在该函数下方有条宏处理subsys_initcall(net_dev_init)，该宏完成将net_dev_init函数指针放在上图中.initcall4.init段中，在do_initcalls()函数调用时，其处于_initcall_start~_initcall_end直接，所以net_dev_init()就这样被调用了。<br/>
+<br/>
+这种机制真是比较巧妙，也比较难以理解，设计初衷就是为了实现一个通用的启动流程，使移植或扩展时，只需要对需要启动加载的模块进行宏处理即可。<br/>
+<br/>
+下面来详细了解这种机制的实现方法。<br/>
+<br/>
+先说一说gcc对手动定位代码段位置的支持，_attribute_是gcc的关键字，指示编译器给符号设置特定属性。编译完成后输入到链接器的是各个带有符号表的文件，链接器对各个文件中符号进行重定位，_attribute_在该阶段进行处理，将指定符号放在链接生成文件段中特定位置，不单只指代码段，也包括数据段，如系统初始化中经常见到的_initdata，即将指定符号放到数据段特定位置。<br/>
+<br/>
+当然，具体这些段是如何生成的，也是有文件进行配置，即在链接配置文件arch/xxx/vmlinux.ds.S.中,如下<br/>
+<img src="无标题 4.png" /><br/>
+<br/>
+图4<br/>
+<br/>
+在2.6.16内核中INITCALLS已直接被替换为<br/>
+<br/>
+<br/>
+&#09;<br/>
+<br/>
+*(.initcall1.init)<br/>
+*(.initcall2.init)<br/>
+*(.initcall3.init)<br/>
+*(.initcall4.init)<br/>
+*(.initcall5.init)<br/>
+*(.initcall6.init)<br/>
+*(.initcall7.init)<br/>
+<br/>
+<br/>
+这和图3中的结构是对应的。接下来看看内核提供了哪些宏定义用来处理特定函数指针和数据。在include/linux/init.h文件中，包括各种常见的包装。<br/>
+<br/>
+<br/>
+&#09;<br/>
+<br/>
+#define __define_initcall(level,fn) \<br/>
+&nbsp; &nbsp; static initcall_t __initcall_##fn __attribute_used__ \<br/>
+&nbsp; &nbsp; __attribute__((__section__(".initcall" level ".init"))) = fn<br/>
+<br/>
+#define core_initcall(fn) &nbsp; &nbsp; &nbsp; __define_initcall("1",fn)<br/>
+#define postcore_initcall(fn) &nbsp; __define_initcall("2",fn)<br/>
+#define arch_initcall(fn) &nbsp; &nbsp; &nbsp; __define_initcall("3",fn)<br/>
+#define subsys_initcall(fn) &nbsp; &nbsp; __define_initcall("4",fn)<br/>
+#define fs_initcall(fn) &nbsp; &nbsp; &nbsp; &nbsp; __define_initcall("5",fn)<br/>
+#define device_initcall(fn) &nbsp; &nbsp; __define_initcall("6",fn)<br/>
+#define late_initcall(fn) &nbsp; &nbsp; &nbsp; __define_initcall("7",fn)<br/>
+<br/>
+可以看出，内核为满足不同初始化等级，设计了1~7共7个等级，不同等级初始化代码用对应的宏进行处理，读者可以对照上表进行理解一下。还有其它一些宏，用于各种任务需求，如模块加载宏module_init()，module_exit()，其处理又略有不同，读者可以自己理解一下。<br/>
+<br/>
+总的来说，initcalls机制提供给内核开发者或驱动开发者一个接口，方便将自己的函数添加到内核初始化列表中，在内核初始化最后阶段进行处理。<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+阶段三：<br/>
+<br/>
+当我们使用make menuconfig来配置内核时，将某个module配置为m时，MODULE这个宏就被定义了，而当配置为y时，则没有定义，具体的实现在kernel的根Makefile(-DMODULE)里。<br/>
+<br/>
+现在我们先看下第一种情况，即把module配置为m的情况，即else分支的代码。<br/>
+<br/>
+先看下initcall_t的定义：<br/>
+<br/>
+typedef int (*initcall_t)(void);<br/>
+<br/>
+它是一个接收参数为void, 返回值为int类型的函数指针。这样就明白了，其实前两句话只是做了一个检测，当你传进来的函数指针的参数和返回值与initcall_t不一致时，就会有告警。<br/>
+重点在第三句，是使用alias将initfn变名为init_module，我们知道，kernel 2.4版本之前都是用init_module来加载模块的。这样做应该是为了不用修改load module的那块代码吧。<br/>
+<br/>
+当我们调用insmod将module加载进内核时，会去找init_module作为入口地址，即是我们的initfn, 这样module就被加载了。<br/>
+<br/>
+取nvme.ko为例，我们可以通过objdump -t nvme.ko 查看该模块的符号表，发现init_module和nvme_init指向同一个偏移量。如下：<br/>
+<br/>
+&nbsp;<br/>
+<br/>
+现在看第二种情况，即我们选择将模块编进内核，让它随内核启动而加载。<br/>
+<br/>
+这种情况下module_init最终会调用__define_initcall宏，这个宏的作用就是将我们的初始化函数放在".initcall" level".init"中。<br/>
+<br/>
+在这里是.initcall6.init, 它的位置可以在Vmlinux.lds.h里面找到：<br/>
+复制代码<br/>
+<br/>
+#define INITCALLS &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall0.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall0s.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall1.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall1s.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall2.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall2s.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall3.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall3s.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall4.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall4s.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall5.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall5s.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; *(.initcallrootfs.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall6.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall6s.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall7.init) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\<br/>
+&nbsp; &nbsp; &nbsp; *(.initcall7s.init)<br/>
+<br/>
+复制代码<br/>
+<br/>
+而INITCALL可以在vmlinux.lds.S里面找到：<br/>
+复制代码<br/>
+<br/>
+.init.text : AT(ADDR(.init.text) - LOAD_OFFSET) {<br/>
+&nbsp; &nbsp; &nbsp; __init_begin = .;<br/>
+&nbsp; &nbsp; _sinittext = .;<br/>
+&nbsp; &nbsp; *(.init.text)<br/>
+&nbsp; &nbsp; _einittext = .;<br/>
+&nbsp; }<br/>
+&nbsp; .init.data : AT(ADDR(.init.data) - LOAD_OFFSET) { *(.init.data) }<br/>
+&nbsp; . = ALIGN(16);<br/>
+&nbsp; .init.setup : AT(ADDR(.init.setup) - LOAD_OFFSET) {<br/>
+&nbsp; &nbsp; &nbsp; __setup_start = .;<br/>
+&nbsp; &nbsp; *(.init.setup)<br/>
+&nbsp; &nbsp; &nbsp; __setup_end = .;<br/>
+&nbsp; &nbsp;}<br/>
+&nbsp; .initcall.init : AT(ADDR(.initcall.init) - LOAD_OFFSET) {<br/>
+&nbsp; &nbsp; &nbsp; __initcall_start = .;<br/>
+&nbsp; &nbsp; INITCALLS<br/>
+&nbsp; &nbsp; &nbsp; __initcall_end = .;<br/>
+&nbsp; }<br/>
+&nbsp; .con_initcall.init : AT(ADDR(.con_initcall.init) - LOAD_OFFSET) {<br/>
+&nbsp; &nbsp; &nbsp; __con_initcall_start = .;<br/>
+&nbsp; &nbsp; *(.con_initcall.init)<br/>
+&nbsp; &nbsp; &nbsp; __con_initcall_end = .;<br/>
+&nbsp; }<br/>
+<br/>
+复制代码<br/>
+<br/>
+上面贴出来的代码是系统启动时存放初始化数据的地方，执行完成后不再需要，会被释放掉。根据上面的内存布局，可以列出初始化宏和内存的对应关系：<br/>
+复制代码<br/>
+<br/>
+_init_begin &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;-------------------<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp;.init.text &nbsp; &nbsp; &nbsp; | ---- __init<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |-------------------|<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp;.init.data &nbsp; &nbsp; &nbsp; | ---- __initdata<br/>
+<br/>
+_setup_start &nbsp; &nbsp; &nbsp; |-------------------|<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp;.init.setup &nbsp; &nbsp; &nbsp;| ---- __setup_param<br/>
+<br/>
+__initcall_start &nbsp; |-------------------|<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp;.initcall1.init &nbsp;| ---- core_initcall<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |-------------------|<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp;.initcall2.init &nbsp;| ---- postcore_initcall<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |-------------------|<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp;.initcall3.init &nbsp;| ---- arch_initcall<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |-------------------|<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp;.initcall4.init &nbsp;| ---- subsys_initcall<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |-------------------|<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp;.initcall5.init &nbsp;| ---- fs_initcall<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |-------------------|<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp;.initcall6.init &nbsp;| ---- device_initcall<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |-------------------|<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp;.initcall7.init &nbsp;| ---- late_initcall<br/>
+<br/>
+__initcall_end &nbsp; &nbsp;|-------------------|<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp; &nbsp;... ... ... &nbsp; &nbsp;|<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; |<br/>
+<br/>
+__init_end &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;-------------------<br/>
+<br/>
+复制代码<br/>
+<br/>
+而各个initcall被调用的地方在kernel_init-》do_basic_setup-》do_initcalls里面：<br/>
+复制代码<br/>
+<br/>
+static void __init do_initcalls(void)<br/>
+{<br/>
+&nbsp; &nbsp; initcall_t *call;<br/>
+&nbsp; &nbsp; int count = preempt_count();<br/>
+<br/>
+&nbsp; &nbsp; for (call = __initcall_start; call &lt; __initcall_end; call++) {<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; ktime_t t0, t1, delta;<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; char *msg = NULL;<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; char msgbuf[40];<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; int result;<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; if (initcall_debug) {<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; printk("Calling initcall 0x%p", *call);<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; print_fn_descriptor_symbol(": %s()",<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (unsigned long) *call);<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; printk("\n");<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; t0 = ktime_get();<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; }<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; result = (*call)();<br/>
+...<br/>
+}</div></body></html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>字符设备驱动</title>
+</head><body><span style="font-size: 14pt">字符设备驱动</span><br/>
+1.Linux 内核代码中相关文件名称：<i><b>fs/char_dev.c fs/fs.h include/linux/cdev.h,include/linux/kobj_map.h &nbsp;drivers/base/map.c</b></i><br/>
+2.相关的结构体<i><b>struct cdev.</b></i><b><br/>
+</b>struct cdev {<br/>
+&#09;struct kobject kobj; &nbsp; //kobj 对象<br/>
+&#09;struct module *owner; &nbsp;//一般是THIS_MODULE<br/>
+&#09;const struct file_operations *ops; &nbsp;//文件操作，read open<br/>
+&#09;struct list_head list;<br/>
+&#09;dev_t dev; &nbsp; <br/>
+&#09;unsigned int count;<br/>
+};<br/>
+3.相关的函数<br/>
+<a href="https://www.kernel.org/doc/htmldocs/kernel-api/API-register-chrdev-region.html">register_chrdev_region</a>&nbsp;— register a range of device numbers<br/>
+&nbsp;<a href="https://www.kernel.org/doc/htmldocs/kernel-api/API-alloc-chrdev-region.html">alloc_chrdev_region</a>&nbsp;— register a range of char device numbers <br/>
+<a href="https://www.kernel.org/doc/htmldocs/kernel-api/API---register-chrdev.html">__register_chrdev</a>&nbsp;— create and register a cdev occupying a range of minors<br/>
+&nbsp;<a href="https://www.kernel.org/doc/htmldocs/kernel-api/API-unregister-chrdev-region.html">unregister_chrdev_region</a>&nbsp;— unregister a range of device numbers <br/>
+<a href="https://www.kernel.org/doc/htmldocs/kernel-api/API---unregister-chrdev.html">__unregister_chrdev</a>&nbsp;— unregister and destroy a cdev<br/>
+&nbsp;<a href="https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-add.html">cdev_add</a>&nbsp;— add a char device to the system <br/>
+<a href="https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-del.html">cdev_del</a>&nbsp;— remove a cdev from the system <br/>
+<a href="https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-alloc.html">cdev_alloc</a>&nbsp;— allocate a cdev structure <br/>
+<a href="https://www.kernel.org/doc/htmldocs/kernel-api/API-cdev-init.html">cdev_init</a>&nbsp;— initialize a cdev structure <br/>
+4.其它函数<br/>
+register_chrdev,内部调用的是<a href="https://www.kernel.org/doc/htmldocs/kernel-api/API---register-chrdev.html">__register_chrdev</a>&nbsp;<br/>
+5.函数代码分析<br/>
+<br/>
+//fs/fs.h<br/>
+static inline int register_chrdev(unsigned int major, const char *name,<br/>
+&#09;&#09;&#09;&#09; &nbsp;const struct file_operations *fops)<br/>
+{<br/>
+&#09;return __register_chrdev(major, 0, 256, name, fops);<br/>
+}<br/>
+<br/>
+//char_dev.c<br/>
+<br/>
+int __register_chrdev(unsigned int major, unsigned int baseminor,<br/>
+&#09;&#09; &nbsp; &nbsp; &nbsp;unsigned int count, const char *name,<br/>
+&#09;&#09; &nbsp; &nbsp; &nbsp;const struct file_operations *fops)<br/>
+{<br/>
+&#09;struct char_device_struct *cd;<br/>
+&#09;struct cdev *cdev;<br/>
+&#09;int err = -ENOMEM;<br/>
+<br/>
+&#09;cd = __register_chrdev_region(major, baseminor, count, name); &nbsp;//@1<br/>
+&#09;if (IS_ERR(cd))<br/>
+&#09;&#09;return PTR_ERR(cd);<br/>
+<br/>
+&#09;cdev = cdev_alloc(); &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;@2<br/>
+&#09;if (!cdev)<br/>
+&#09;&#09;goto out2;<br/>
+<br/>
+&#09;cdev-&gt;owner = fops-&gt;owner;<br/>
+&#09;cdev-&gt;ops = fops;<br/>
+&#09;kobject_set_name(&amp;cdev-&gt;kobj, "%s", name);<br/>
+<br/>
+&#09;err = cdev_add(cdev, MKDEV(cd-&gt;major, baseminor), count); &nbsp; //@3<br/>
+&#09;if (err)<br/>
+&#09;&#09;goto out;<br/>
+<br/>
+&#09;cd-&gt;cdev = cdev;<br/>
+<br/>
+&#09;return major ? 0 : cd-&gt;major;<br/>
+out:<br/>
+&#09;kobject_put(&amp;cdev-&gt;kobj);<br/>
+out2:<br/>
+&#09;kfree(__unregister_chrdev_region(cd-&gt;major, baseminor, count));<br/>
+&#09;return err;<br/>
+}<br/>
+<br/>
+@1:static struct char_device_struct *<br/>
+__register_chrdev_region(unsigned int major, unsigned int baseminor,<br/>
+&#09;&#09;&#09; &nbsp; int minorct, const char *name)<br/>
+{<br/>
+&#09;struct char_device_struct *cd, **cp;<br/>
+&#09;int ret = 0;<br/>
+&#09;int i;<br/>
+<br/>
+&nbsp; &nbsp; /*申请char_device_struct,并清空*/<br/>
+&#09;cd = kzalloc(sizeof(struct char_device_struct), GFP_KERNEL);<br/>
+&#09;if (cd == NULL)<br/>
+&#09;&#09;return ERR_PTR(-ENOMEM);<br/>
+<br/>
+&#09;mutex_lock(&amp;chrdevs_lock);<br/>
+<br/>
+&nbsp; &nbsp; /*假如是major为0时，表示动态申请，逆序遍历指针数组 chrdevs(char_device_struct *)为空时，表明没有被使用，同时将索引赋值给major*/ <br/>
+&#09;/* temporary */<br/>
+&#09;if (major == 0) {<br/>
+&#09;&#09;for (i = ARRAY_SIZE(chrdevs)-1; i &gt; 0; i--) {<br/>
+&#09;&#09;&#09;if (chrdevs[i] == NULL)<br/>
+&#09;&#09;&#09;&#09;break;<br/>
+&#09;&#09;}<br/>
+<br/>
+&#09;&#09;if (i == 0) {<br/>
+&#09;&#09;&#09;ret = -EBUSY;<br/>
+<br/>
+&#09;&#09;&#09;goto out;<br/>
+&#09;&#09;}<br/>
+&#09;&#09;major = i;<br/>
+&#09;&#09;ret = major;<br/>
+&#09;}<br/>
+<br/>
+&nbsp; &nbsp; /*使用major*/<br/>
+&#09;cd-&gt;major = major;<br/>
+&nbsp; &nbsp; /*使用register_chrdev时，baseminor 为0*/<br/>
+&#09;cd-&gt;baseminor = baseminor; &nbsp;<br/>
+&nbsp; &nbsp; /*使用register_chrdev时，minorct为256*/ <br/>
+&#09;cd-&gt;minorct = minorct;<br/>
+&#09;strlcpy(cd-&gt;name, name, sizeof(cd-&gt;name));<br/>
+<br/>
+&nbsp; &nbsp; /* return major % CHRDEV_MAJOR_HASH_SIZE;major对应的是chrdevs的下标*/<br/>
+&#09;i = major_to_index(major);<br/>
+&nbsp;<br/>
+<br/>
+&nbsp; &nbsp; /*1.cp存放的是指针的地址，即chrdevs指针数组中的指针的地址 *cp为chrdevs的内容<br/>
+&nbsp; &nbsp; &nbsp; 2.首次调用，for循环会直接跳出*/<br/>
+&#09;for (cp = &amp;chrdevs[i]; *cp; cp = &amp;(*cp)-&gt;next)<br/>
+&#09;&#09;if ((*cp)-&gt;major &gt; major ||<br/>
+&#09;&#09; &nbsp; &nbsp;((*cp)-&gt;major == major &amp;&amp;<br/>
+&#09;&#09; &nbsp; &nbsp; (((*cp)-&gt;baseminor &gt;= baseminor) ||<br/>
+&#09;&#09; &nbsp; &nbsp; &nbsp;((*cp)-&gt;baseminor + (*cp)-&gt;minorct &gt; baseminor))))<br/>
+&#09;&#09;&#09;break;<br/>
+<br/>
+<br/>
+&nbsp; &nbsp; /*1.首次调用会直接跳出 */<br/>
+&#09;/* Check for overlapping minor ranges. &nbsp;*/<br/>
+&#09;if (*cp &amp;&amp; (*cp)-&gt;major == major) {<br/>
+&#09;&#09;int old_min = (*cp)-&gt;baseminor;<br/>
+&#09;&#09;int old_max = (*cp)-&gt;baseminor + (*cp)-&gt;minorct - 1;<br/>
+&#09;&#09;int new_min = baseminor;<br/>
+&#09;&#09;int new_max = baseminor + minorct - 1;<br/>
+<br/>
+&#09;&#09;/* New driver overlaps from the left. &nbsp;*/<br/>
+&#09;&#09;if (new_max &gt;= old_min &amp;&amp; new_max &lt;= old_max) {<br/>
+&#09;&#09;&#09;ret = -EBUSY;<br/>
+&#09;&#09;&#09;goto out;<br/>
+&#09;&#09;}<br/>
+<br/>
+&#09;&#09;/* New driver overlaps from the right. &nbsp;*/<br/>
+&#09;&#09;if (new_min &lt;= old_max &amp;&amp; new_min &gt;= old_min) {<br/>
+&#09;&#09;&#09;ret = -EBUSY;<br/>
+&#09;&#09;&#09;goto out;<br/>
+&#09;&#09;}<br/>
+&#09;}<br/>
+<br/>
+<br/>
+&nbsp; &nbsp; /*首次调用，cd-&gt;next = NULL,*cp 即chrdevs[i]，相当于chrdevs[i] = cd<br/>
+&nbsp; &nbsp; &nbsp; 2.*/<br/>
+&#09;cd-&gt;next = *cp;<br/>
+&#09;*cp = cd;<br/>
+&#09;mutex_unlock(&amp;chrdevs_lock);<br/>
+&#09;return cd;<br/>
+out:<br/>
+&#09;mutex_unlock(&amp;chrdevs_lock);<br/>
+&#09;kfree(cd);<br/>
+&#09;return ERR_PTR(ret);<br/>
+}<br/>
+经过@1函数调用,会形成如图的效果：<br/>
+<img src="20160929004602761.png" /><br/>
+@2<br/>
+struct cdev *cdev_alloc(void)<br/>
+{<br/>
+&nbsp; &nbsp; /*申请cdev结构体，并清空*/ <br/>
+&#09;struct cdev *p = kzalloc(sizeof(struct cdev), GFP_KERNEL);<br/>
+&#09;if (p) {<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; /*初始化cdev 中的list双向链表*/<br/>
+&#09;&#09;INIT_LIST_HEAD(&amp;p-&gt;list);<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; /*初始化cdev中kobject*/<br/>
+&#09;&#09;kobject_init(&amp;p-&gt;kobj, &amp;ktype_cdev_dynamic);<br/>
+&#09;}<br/>
+&#09;return p;<br/>
+}<br/>
+<br/>
+@3<br/>
+<img src="https://img-blog.csdn.net/20160929004602761" />&nbsp; <img src="https://img-blog.csdn.net/20160929004602761" />&nbsp; int cdev_add(struct cdev *p, dev_t dev, unsigned count)<br/>
+{<br/>
+&#09;int error;<br/>
+&#09;//将cdev 的dev 参数赋值<br/>
+&#09;p-&gt;dev = dev;<br/>
+&#09;p-&gt;count = count;<br/>
+&nbsp; &nbsp; //将cdev p 添加到cdev_map中，文件系统靠cdev_map去查找cdev，然后找到对应的ops，操作具体的设备<br/>
+&#09;error = kobj_map(cdev_map, dev, count, NULL,<br/>
+&#09;&#09;&#09; exact_match, exact_lock, p);<br/>
+&#09;if (error)<br/>
+&#09;&#09;return error;<br/>
+<br/>
+&#09;kobject_get(p-&gt;kobj.parent);<br/>
+<br/>
+&#09;return 0;<br/>
+}<br/>
+<br/>
+<img src="untitled diagram(1).jpg" /><br/>
+<br/>
+其实在字符设备驱动里有2条线<br/>
+1 一条是chardevs的cdev * 的指针数组，用来存放注册的cdev，相同的major number ，用链表链接起来，使用相同的文件操作指针<br/>
+2 第二条是cdev_maps，通过cdev_add 函数将cdev 添加到cdev_map中，cdev 提供了一个cdev 的dummy open，当打开设备文件的时候，<br/>
+文件系统会通过调用cdev_open,这个open函数每次打开文件都会调用的，kobj_lookup查找cdev map 一致的设备号，从而具体的设备ops赋值给上层的filep 文件指针。<br/>
+<br/>
+chardevs指针数组会在chrdev_show 函数中调用，遍历chardevs 中的设备，通过cat proc/devices ,可以看到设备文件。其中chardevs 就是我们所创建的设备文件<br/>
+Character devices:<br/>
+&nbsp; 1 mem<br/>
+&nbsp; 4 /dev/vc/0<br/>
+&nbsp; 4 tty<br/>
+&nbsp; 4 ttyS<br/>
+&nbsp; 5 /dev/tty<br/>
+&nbsp; 5 /dev/console<br/>
+&nbsp; 5 /dev/ptmx<br/>
+&nbsp; 5 ttyprintk<br/>
+&nbsp; 6 lp<br/>
+&nbsp; 7 vcs<br/>
+&nbsp;10 misc<br/>
+&nbsp;13 input<br/>
+&nbsp;21 sg<br/>
+&nbsp;29 fb<br/>
+&nbsp;89 i2c<br/>
+&nbsp;99 ppdev<br/>
+108 ppp<br/>
+116 alsa<br/>
+128 ptm<br/>
+136 pts<br/>
+180 usb<br/>
+189 usb_device<br/>
+204 ttyMAX<br/>
+226 drm<br/>
+239 chardevs<br/>
+240 chardevs<br/>
+241 chardevs<br/>
+242 chardevs<br/>
+243 chardevs<br/>
+244 hidraw<br/>
+245 aux<br/>
+246 bsg<br/>
+247 hmm_device<br/>
+248 watchdog<br/>
+249 rtc<br/>
+250 dax<br/>
+251 dimmctl<br/>
+252 ndctl<br/>
+253 tpm<br/>
+254 gpiochip<br/>
+<br/>
+Block devices:<br/>
+&nbsp; 7 loop<br/>
+&nbsp; 8 sd<br/>
+&nbsp; 9 md<br/>
+&nbsp;11 sr<br/>
+&nbsp;65 sd<br/>
+&nbsp;66 sd<br/>
+&nbsp;67 sd<br/>
+&nbsp;68 sd<br/>
+&nbsp;69 sd<br/>
+&nbsp;70 sd<br/>
+&nbsp;71 sd<br/>
+128 sd<br/>
+129 sd<br/>
+130 sd<br/>
+131 sd<br/>
+132 sd<br/>
+133 sd<br/>
+134 sd<br/>
+135 sd<br/>
+253 device-mapper<br/>
+254 mdp<br/>
+259 blkext<br/>
+<br/>
+<br/>
+整个文件调用流程是：<br/>
+<img src="image.png" /><br/>
+<br/>
+</body></html>

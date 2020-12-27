@@ -1,0 +1,14 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>I2C-dev</title>
+</head><body>I2C dev主要作用：可以使用应用层读写的方式，向对应的I2C bus上读写数据<br/>
+具体实现：<br/>
+文件中主要实现了对I2C bus上device add 以及del的监听，通过bus_register_notify,当有设备挂载到I2C bus上时，会回调notify.notify中创建adapter的设备节点，主设备号是89，此设备号是i2C bus的编号，adapter-nr<br/>
+<br/>
+@1申请字符设备，注册I2C bus监听<br/>
+@2有I2C bus上的设备注册，回调i2cdev_attach_adapter，<br/>
+@3i2cdev_attach_adapter 中完成设备的注册，在/dev下创建i2c-%d,%d是adapter-&gt;nr<br/>
+@4通过Ictrl 配置I2C client 的从地址等参数<br/>
+@5在对应的I2C adapter上发送数据</body></html>

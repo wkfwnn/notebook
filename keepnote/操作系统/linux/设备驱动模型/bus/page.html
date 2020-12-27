@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Bus</title>
+</head><body>相关的文件：linux-3.16.82\linux-3.16.82\drivers\base\<b>bus.c</b>&nbsp; linux-3.16.82\linux-3.16.82\include\linux\<b>device.h</b><br/>
+<br/>
+初始化:<br/>
+int __init buses_init(void)<br/>
+{<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; /*动态的创建在/sys/下创建bus目录*/<br/>
+&#09;<b>bus_kset</b>&nbsp;= kset_create_and_add("bus", &amp;bus_uevent_ops, NULL);<br/>
+&#09;if (!bus_kset)<br/>
+&#09;&#09;return -ENOMEM;<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; /*动态的创建system目录，父节点是devices_kset，即/sys/devices/system*/<br/>
+&#09;<b>system_kset</b>&nbsp;= kset_create_and_add("system", NULL, &amp;devices_kset-&gt;kobj);<br/>
+&#09;if (!system_kset)<br/>
+&#09;&#09;return -ENOMEM;<br/>
+&#09;return 0;<br/>
+}<br/>
+相关的结构体:<br/>
+struct bus_type {<br/>
+&#09;const char&#09;&#09;*name;<br/>
+&#09;const char&#09;&#09;*dev_name;<br/>
+&#09;struct device&#09;&#09;*dev_root;<br/>
+&#09;struct device_attribute&#09;*dev_attrs;&#09;/* use dev_groups instead */<br/>
+&#09;const struct attribute_group **bus_groups;<br/>
+&#09;const struct attribute_group **dev_groups;<br/>
+&#09;const struct attribute_group **drv_groups;<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; /*device 与driver 匹配函数，调用driver_register或者是bus_add_driver 会进行match*/<br/>
+&#09;int (*match)(struct device *dev, struct device_driver *drv);<br/>
+&#09;int (*uevent)(struct device *dev, struct kobj_uevent_env *env);<br/>
+&nbsp; &nbsp; &nbsp; &nbsp;/*driver 或者是bus 上定义了probe，不能同时生效，如果bus上定义了probe，则不调用drv-&gt;probe*/<br/>
+&#09;int (*probe)(struct device *dev);<br/>
+&#09;int (*remove)(struct device *dev);<br/>
+&#09;void (*shutdown)(struct device *dev);<br/>
+<br/>
+&#09;int (*online)(struct device *dev);<br/>
+&#09;int (*offline)(struct device *dev);<br/>
+<br/>
+&#09;int (*suspend)(struct device *dev, pm_message_t state);<br/>
+&#09;int (*resume)(struct device *dev);<br/>
+<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; /*电源管理相关，通过赋值其fops，对总线上的设备进行电源管理*/<br/>
+&#09;const struct dev_pm_ops *pm;<br/>
+<br/>
+&#09;struct iommu_ops *iommu_ops;<br/>
+<br/>
+&#09;struct subsys_private *p;<br/>
+&#09;struct lock_class_key lock_key;<br/>
+};<br/>
+<br/>
+struct subsys_private {<br/>
+&#09;struct kset subsys;<br/>
+&#09;struct kset *devices_kset;<br/>
+&#09;struct list_head interfaces;<br/>
+&#09;struct mutex mutex;<br/>
+<br/>
+&#09;struct kset *drivers_kset;<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; /*存放着所有总线上的devices，通过bus_add_device*/<br/>
+&#09;struct klist klist_devices;<br/>
+&nbsp; &nbsp; &nbsp; &nbsp;/*存放着所有总线上的drivers，通过bus_add_driver或者driver_register*/<br/>
+&#09;struct klist klist_drivers;<br/>
+&nbsp; &nbsp; &nbsp;<b>&nbsp;<i>&nbsp;</i></b><i>&nbsp;/*bus_notifier,使用bus_register_notifier, 会在device_add,device_bind_driver时通知，发出一些事件*/ &nbsp; &nbsp; <br/>
+</i><i>&nbsp; &nbsp; &nbsp; &nbsp;/*#define BUS_NOTIFY_ADD_DEVICE&#09;&#09;0x00000001 /* device added */</i><ul><i><li style="list-style-type: none">#define BUS_NOTIFY_DEL_DEVICE&#09;&#09;0x00000002 /* device removed */</li>
+<li style="list-style-type: none">#define BUS_NOTIFY_BIND_DRIVER&#09;&#09;0x00000003 /* driver about to be bound */</li>
+<li style="list-style-type: none">#define BUS_NOTIFY_BOUND_DRIVER&#09;&#09;0x00000004 /* driver bound to device */</li>
+<li style="list-style-type: none">#define BUS_NOTIFY_UNBIND_DRIVER&#09;0x00000005 /* driver about to be unbound */</li>
+</i><li style="list-style-type: none"><i>#define BUS_NOTIFY_UNBOUND_DRIVER&#09;0x00000006 /* driver is unbound from the device */</i></li>
+</ul>
+&#09;struct blocking_notifier_head bus_notifier;<br/>
+&nbsp; &nbsp; &nbsp; &nbsp;/*自动probe，添加driver到bus上时会自动match device，假如为真，表示要match，否则不进行device与driver的绑定，默认是1*/<br/>
+&#09;unsigned int drivers_autoprobe:1;<br/>
+&#09;struct bus_type *bus;<br/>
+<br/>
+&#09;struct kset glue_dirs;<br/>
+&#09;struct class *class;<br/>
+};<br/>
+<br/>
+重要的API<br/>
+int bus_register(struct bus_type *bus)<br/>
+void bus_unregister(struct bus_type *bus)<br/>
+<img src="bus.jpg" /><br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+</body></html>

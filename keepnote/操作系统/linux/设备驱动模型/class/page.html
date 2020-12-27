@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Class</title>
+</head><body>相关的文件：<br/>
+linux-3.16.82\linux-3.16.82\drivers\base<b>\class.c &nbsp; </b>&#09;linux-3.16.82\linux-3.16.82\include\linux\<b>device.h</b><br/>
+初始化：<br/>
+int __init classes_init(void)<br/>
+{<ul><li style="list-style-type: none">/*初始化一个class_kset,目的是在sys/目录下创建class的文件夹</li>
+</ul>
+&#09;class_kset = kset_create_and_add("class", NULL, NULL);<br/>
+&#09;if (!class_kset)<br/>
+&#09;&#09;return -ENOMEM;<br/>
+&#09;return 0;<br/>
+}<br/>
+相关的结构体<br/>
+/**<br/>
+&nbsp;* struct class - device classes<br/>
+&nbsp;* @name:&#09;Name of the class.<br/>
+&nbsp;* @owner:&#09;The module owner.<br/>
+&nbsp;* @class_attrs: Default attributes of this class.<br/>
+&nbsp;* @dev_groups:&#09;Default attributes of the devices that belong to the class.<br/>
+&nbsp;* @dev_kobj:&#09;The kobject that represents this class and links it into the hierarchy.<br/>
+&nbsp;* @dev_uevent:&#09;Called when a device is added, removed from this class, or a<br/>
+&nbsp;*&#09;&#09;few other things that generate uevents to add the environment<br/>
+&nbsp;*&#09;&#09;variables.<br/>
+&nbsp;* @devnode:&#09;Callback to provide the devtmpfs.<br/>
+&nbsp;* @class_release: Called to release this class.<br/>
+&nbsp;* @dev_release: Called to release the device.<br/>
+&nbsp;* @suspend:&#09;Used to put the device to sleep mode, usually to a low power<br/>
+&nbsp;*&#09;&#09;state.<br/>
+&nbsp;* @resume:&#09;Used to bring the device from the sleep mode.<br/>
+&nbsp;* @ns_type:&#09;Callbacks so sysfs can detemine namespaces.<br/>
+&nbsp;* @namespace:&#09;Namespace of the device belongs to this class.<br/>
+&nbsp;* @pm:&#09;&#09;The default device power management operations of this class.<br/>
+&nbsp;* @p:&#09;&#09;The private data of the driver core, no one other than the<br/>
+&nbsp;*&#09;&#09;driver core can touch this.<br/>
+&nbsp;*<br/>
+&nbsp;* A class is a higher-level view of a device that abstracts out low-level<br/>
+&nbsp;* implementation details. Drivers may see a SCSI disk or an ATA disk, but,<br/>
+&nbsp;* at the class level, they are all simply disks. Classes allow user space<br/>
+&nbsp;* to work with devices based on what they do, rather than how they are<br/>
+&nbsp;* connected or how they work.<br/>
+&nbsp;*/<br/>
+struct class {<br/>
+&#09;const char&#09;&#09;*name;<br/>
+&#09;struct module&#09;&#09;*owner;<br/>
+<br/>
+&#09;struct class_attribute&#09;&#09;*class_attrs;<br/>
+&#09;const struct attribute_group&#09;**dev_groups;<br/>
+&#09;struct kobject&#09;&#09;&#09;*dev_kobj;<br/>
+<br/>
+&#09;int (*dev_uevent)(struct device *dev, struct kobj_uevent_env *env);<br/>
+&#09;char *(*devnode)(struct device *dev, umode_t *mode);<br/>
+<br/>
+&#09;void (*class_release)(struct class *class);<br/>
+&#09;void (*dev_release)(struct device *dev);<br/>
+<br/>
+&#09;int (*suspend)(struct device *dev, pm_message_t state);<br/>
+&#09;int (*resume)(struct device *dev);<br/>
+<br/>
+&#09;const struct kobj_ns_type_operations *ns_type;<br/>
+&#09;const void *(*namespace)(struct device *dev);<br/>
+<br/>
+&#09;const struct dev_pm_ops *pm;<br/>
+<br/>
+&#09;struct subsys_private *p;<br/>
+};<br/>
+struct class_attribute {<br/>
+&#09;struct attribute attr;<br/>
+&#09;ssize_t (*show)(struct class *class, struct class_attribute *attr,<br/>
+&#09;&#09;&#09;char *buf);<br/>
+&#09;ssize_t (*store)(struct class *class, struct class_attribute *attr,<br/>
+&#09;&#09;&#09;const char *buf, size_t count);<br/>
+};<br/>
+<br/>
+struct class_interface {<br/>
+&#09;struct list_head&#09;node;<br/>
+&#09;struct class&#09;&#09;*class;<br/>
+<br/>
+&#09;int (*add_dev)&#09;&#09;(struct device *, struct class_interface *);<br/>
+&#09;void (*remove_dev)&#09;(struct device *, struct class_interface *);<br/>
+};<br/>
+struct class_compat {<br/>
+&#09;struct kobject *kobj;<br/>
+};<br/>
+<br/>
+相关的API<br/>
+#define class_create(owner, name) 类似于class_register,<br/>
+int __class_register(struct class *cls, struct lock_class_key *key)<br/>
+void class_unregister(struct class *cls)<br/>
+class_register(class)&#09;<br/>
+<br/>
+struct class_compat *class_compat_register(const char *name);<br/>
+void class_compat_unregister(struct class_compat *cls);<br/>
+int class_compat_create_link(struct class_compat *cls, struct device *dev,<br/>
+&#09;&#09;&#09; &nbsp; &nbsp; struct device *device_link);<br/>
+void class_compat_remove_link(struct class_compat *cls, struct device *dev,<br/>
+&#09;&#09;&#09; &nbsp; &nbsp; &nbsp;struct device *device_link);<br/>
+<br/>
+extern int __must_check class_interface_register(struct class_interface *);<br/>
+extern void class_interface_unregister(struct class_interface *);<br/>
+<br/>
+extern struct class * __must_check __class_create(struct module *owner,<br/>
+&#09;&#09;&#09;&#09;&#09;&#09; &nbsp;const char *name,<br/>
+&#09;&#09;&#09;&#09;&#09;&#09; &nbsp;struct lock_class_key *key);<br/>
+<br/>
+static inline int __must_check class_create_file(struct class *class,<br/>
+&#09;&#09;&#09;&#09;&#09;const struct class_attribute *attr)<br/>
+<br/>
+<img src="class.png" /><br/>
+<br/>
+<br/>
+</body></html>

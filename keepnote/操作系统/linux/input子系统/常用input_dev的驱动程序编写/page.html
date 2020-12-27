@@ -1,0 +1,11 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>常用input_dev的驱动程序编写</title>
+</head><body><br/>
+@1 input_allocate_device: 申请一个input_dev<br/>
+@2 __set_bit(FF_RUMBLE, haptics-&gt;input_dev-&gt;evbit);设置对应的支持的事件的类型,然后设置__set_bit(FF_RUMBLE, haptics-&gt;input_dev-&gt;ffbit);<br/>
+@3 赋值open close等函数，主要是做一些打开休眠的动作<br/>
+@4 input_register_device()<br/>
+@5 input_report_rel,input_report_abs,input_report_switch或者使用input_event</body></html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>关于inputA/B协议</title>
+</head><body>&nbsp;<br/>
+&nbsp;将A/B协议这部分单独拿出来说一方面是因为这部分内容是比较容易忽视的，周围大多数用到input子系统的开发人员也不甚理解；另一方面是由于这部分知识一旦扩展到TP(触摸屏Touch Panel)的多点触摸就要与Middleware/Framework一起结合起来看才能完全掌握，复杂性所在。这里的Middleware/Framework是针对android来说的，本人从事android这几个层次的工作，所以就从android的角度来讲讲这部分内容，其他系统虽然代码不同，但原理上是完全一样的。<br/>
+      B协议又称为slot协议，那么input子系统里面使用的slot是什么，A/B协议究竟是如何划分的？<br/>
+      slot直译为位置、槽，有两层含义，一层是位置，另一层是容器。在Input子系统中，它扮演的就是这两个角色。它产生于这样一个背景：<br/>
+      如果从Device获取的当前数据与上一个数据相同，我们有必要再上报当前数据吗？如果我们不管两次数据是否一致都上报，那就是A协议；如果我们选择不上报，那么既然需要比较，总需要把上一次数据存起来吧，slot就是做这个事情的，显然这就是Slot(B)协议。<br/>
+      其实到这里，对TP不感兴趣的童鞋可以不继续向下看了，了解了两个协议的区别看或者写一般模块的代码不会有问题了。需要注意的是，想要测试Device驱动的input部分是否正常的时候，假如使用的是B协议，input_report数据的时候要记得每次都要report不同的值，否则在HAL层是看不到数据不停上报的，因为前后两个数据相同的时候，B协议是不会上报到系统的。另外，在上层测试数据上报频率的时候，采用 <b>数据总量/时间差</b>&nbsp;的方法，如果驱动采用的是B协议，测试结果也是不准确的。<br/>
+      下面要说的与TP的多点触摸（MT Multi-touch）的功能关系密切，没有兴趣的可以略过。由于这部分代码不从事TP或者android的人是不会接触到的，所以代码就不贴出来了，有兴趣的童鞋可以单独交流O(∩_∩)O~<br/>
+       我们都知道，在支持MT的手机上多指滑动的时候，多条手指滑动过的轨迹彼此是不相交的，这也是我们所期望的。但这个功能究竟是如何实现的呢？看了上面的分析应该就知道，A/B两种协议方式都可以实现该功能。<br/>
+      A协议不会使用slot，多指处理中，它的报点序列如下（每一个序列都以input_report_***函数实现）：<br/>
+&nbsp; &nbsp;<br/>
+点击(此处)折叠或打开 <br/>
+&nbsp; <ul><li>&nbsp;<b>ABS_MT_POSITION_X x[0] </b></li>
+<li><b>ABS_MT_POSITION_Y y[0]</b>&nbsp;</li>
+<li><b>SYN_MT_REPORT</b>&nbsp;</li>
+<li><b>ABS_MT_POSITION_X x[1]</b>&nbsp;</li>
+<li><b>ABS_MT_POSITION_Y y[1]</b>&nbsp;</li>
+<li><b>SYN_MT_REPORT</b>&nbsp;</li>
+<li><b>…</b>&nbsp;</li>
+<li><b>SYN_REPORT</b>&nbsp;</li>
+</ul>
+&nbsp; <br/>
+       上面的序列中需要说明的是系统以SYN_MT_REPORT为一个点的信息的结尾，以SYN_REPORT为一次事件的结尾。也就是说多指触摸的时候，android的中间件部分每收到一次SYN_MT_REPORT就形成一个点信息，收到一个点之后并不会立即处理，而是一个事件完成之后才会处理，SYN_REPORT就是这个事件的标志。A协议比较简单，我们也可以发现在上面的序列中根本就没有轨迹跟踪的信息，有的只是点坐标等信息，那么系统如果去判断当前的多个点各属于哪一条线呢？<br/>
+       我们假设前一次事件共有5个点，本次触摸也有5个点，系统会分别计算前一次5个点与本次5个点的距离，distance[prev_i, curr_j] (i=0,1,...,4; j=0,1,...4)，这样会产生总共5*5=25个数字。然后对这25个数字进行排序，android用的是堆排序。（我们在系统上如果用多指，一般最多也是双值，也就是4个数据，这里采用了堆排序，不知是出于什么情况考虑，感觉换个方法可能更实用些。）下面的任务就是判断哪些当前点与前一次的点最近，那么赋予它们相同的id，应用收到这个信息后，就可以知道当前点属于哪条线了。<br/>
+       手抬起来的时候又用什么样的序列来通知系统呢， <br/>
+&nbsp; &nbsp;<br/>
+点击(此处)折叠或打开 <br/>
+&nbsp; <ul><li>&nbsp;<b>SYN_MT_REPORT</b>&nbsp;</li>
+<li><b>SYN_REPORT</b>&nbsp;</li>
+</ul>
+&nbsp; <br/>
+       只有SYNC，没有其它任何信息，系统就会认为此次事件为UP。<br/>
+       B协议使用了slot，还有一个新面孔TRACKING_ID. <br/>
+&nbsp; &nbsp;<br/>
+点击(此处)折叠或打开 <br/>
+&nbsp; <ul><li>&nbsp;<b>ABS_MT_SLOT 0 </b></li>
+<li><b>ABS_MT_TRACKING_ID **</b>&nbsp;</li>
+<li><b>ABS_MT_POSITION_X x[0]</b>&nbsp;</li>
+<li><b>ABS_MT_POSITION_Y y[0]</b>&nbsp;</li>
+<li><b>ABS_MT_SLOT 1</b>&nbsp;</li>
+<li><b>ABS_MT_TRACKING_ID **</b>&nbsp;</li>
+<li><b>ABS_MT_POSITION_X x[1]</b>&nbsp;</li>
+<li><b>ABS_MT_POSITION_Y y[1]</b>&nbsp;</li>
+<li><b>SYN_REPORT</b>&nbsp;</li>
+</ul>
+&nbsp; <br/>
+      没有SYN_MT_REPORT，那么它用什么来跟踪当前点属于哪一条线呢，用的就是ABS_MT_TRACKING_ID，当前序列中某点的ID值，如果与前一次序列中某点的ID值相等，那么他们就属于同一条线。既然如此，那么android系统中还需要做排序等运算吗？当然不需要。那么手指全部抬起的时候序列又是怎样的呢？       <br/>
+&nbsp; &nbsp;<br/>
+点击(此处)折叠或打开 <br/>
+&nbsp; <ul><li>&nbsp;<b>ABS_MT_SLOT 0</b>&nbsp;</li>
+<li><b>ABS_MT_TRACKING_ID -1</b>&nbsp;</li>
+<li><b>SYN_REPORT</b>&nbsp;</li>
+<li><b>ABS_MT_SLOT 1</b>&nbsp;</li>
+<li><b>ABS_MT_TRACKING_ID -1</b>&nbsp;</li>
+<li><b>SYN_REPORT</b>&nbsp;</li>
+</ul>
+&nbsp; <br/>
+      这里上报的ABS_MT_TRACKING_ID为-1，也只有这里该值才可以小于零，收到该值，系统就会清除对应的ID。看似简单的两个协议内容到这里就分析完毕了。<br/>
+      看了上面的分析，明显可以看出B协议要由于A协议，但事实上并不如此简单。B协议需要硬件上的支持，ID值并不是随便赋值的，而是硬件上跟踪了点的轨迹；如果硬件上满足不了这个条件，那么采用B协议只能闹成笑话。另外，B协议的复杂性如果掌握不好往往会带来一些莫名其妙的问题，比如如果因为某些因素（同步等），在UP的时候少清除了一个slot的信息，那么下次单击的时候你也会惊奇地发现竟然有两个点（采用了B协议，slot已经保存了点信息，除非明确清除）。<br/>
+      希望本文对希望了解TP或者多点触摸功能的童鞋有所帮助。 <br/>
+&nbsp; &nbsp;</body></html>

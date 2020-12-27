@@ -1,0 +1,25 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>SPI驱动编写</title>
+</head><body>1.SPI 驱动编写:<br/>
+spi_driver xxx_driver<br/>
+@1赋值xxx_driver的字段，id_table赋值，probe,remove,shutdown,赋值driver中的name,of_match_table,pm等字段<br/>
+@2调用spi_register_driver();或者使用module_spi_driver<br/>
+@3发送读取数据有同步调用以及异步调用，一般采用同步方式调用spi_write或者是使用spi_read函数，或者自己初始化如下:<br/>
+&#09;struct spi_transfer&#09;t = {<br/>
+&#09;&#09;&#09;.rx_buf&#09;&#09;= buf,<br/>
+&#09;&#09;&#09;.len&#09;&#09;= len,<br/>
+&#09;&#09;};<br/>
+&#09;struct spi_message&#09;m;<br/>
+<br/>
+&#09;spi_message_init(&amp;m);<br/>
+&#09;spi_message_add_tail(&amp;t, &amp;m);<br/>
+&#09;return spi_sync(spi, &amp;m);<br/>
+2.SPI controler驱动编写:<br/>
+以三星s3c-2410控制器为例:<br/>
+@1spi_alloc_master申请一个master<br/>
+@2初始化master部分参数，包括mode，片选，总线序号<br/>
+@3调用spi_register_master注册spi的控制器，注册函数中会申请spi_device。<br/>
+</body></html>

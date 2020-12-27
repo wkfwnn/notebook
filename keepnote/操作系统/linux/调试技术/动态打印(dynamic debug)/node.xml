@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node>
+<version>6</version>
+<dict>
+  <key>title</key><string>动态打印(dynamic debug)</string>
+  <key>nodeid</key><string>f8cdc8f4-dfe4-4a60-8b9a-e872c42b7fb8</string>
+  <key>modified_time</key><integer>1584199867</integer>
+  <key>version</key><integer>6</integer>
+  <key>content_type</key><string>text/xhtml+xml</string>
+  <key>created_time</key><integer>1584199592</integer>
+  <key>order</key><integer>0</integer>
+</dict>
+</node>

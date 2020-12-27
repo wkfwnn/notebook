@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node>
+<version>6</version>
+<dict>
+  <key>title</key><string>kobject_init_and_add.png</string>
+  <key>nodeid</key><string>f93cdc05-d170-465d-a6dd-f4646c7e8b61</string>
+  <key>modified_time</key><integer>1582987755</integer>
+  <key>version</key><integer>6</integer>
+  <key>payload_filename</key><string>kobject_init_and_add.png</string>
+  <key>content_type</key><string>image/png</string>
+  <key>created_time</key><integer>1582987755</integer>
+  <key>order</key><integer>2</integer>
+</dict>
+</node>

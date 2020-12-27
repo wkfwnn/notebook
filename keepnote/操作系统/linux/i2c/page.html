@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>I2C</title>
+</head><body><div style="text-align: center"><img src="无标题.png" /><br/>
+</div><div style="text-align: left">I2C相关的目录：linux-3.16.82\drivers\i2c<br/>
+I2C的头文件:linux-3.16.82\linux-3.16.82\include\linux\i2c.h &nbsp;\linux-3.16.82\include\trace\events\i2c.h<br/>
+<br/>
+<br/>
+通俗讲解:<br/>
+</div><div style="text-align: left">I2C driver 代表一类设备的驱动，</div>&nbsp;I2C client 代表一个I2C的设备，实际的设备，I2C adapter 表示一个I2C 的bus<br/>
+I2C 的bus上可以挂很多的I2C的设备，一个设备对应一个设备驱动，而一个设备驱动可以驱动多个设备<br/>
+I2C 的dirver 通过注册将设备驱动添加到i2C bus上，<br/>
+I2C adapter 可以通过add addapter 将i2C总线控制器的驱动挂载到I2c的bus上， I2c 的驱动和I2C adapter 通过 I2c client进行中间数据传递<br/>
+<br/>
+I2C client 与 I2C driver 通过 id_table进行match。<br/>
+I2C client 实际上是由I2C adapter创建的。<br/>
+I2C client 描述设备的从地址，name等。<br/>
+<div style="text-align: left"><br/>
+</div>相关的结构体：<br/>
+struct i2c_driver {<br/>
+&#09;unsigned int class;<br/>
+<br/>
+&#09;/* Notifies the driver that a new bus has appeared. You should avoid<br/>
+&#09; * using this, it will be removed in a near future.<br/>
+&#09; */<br/>
+&#09;int (*attach_adapter)(struct i2c_adapter *) __deprecated;<br/>
+<br/>
+&#09;/* Standard driver model interfaces */<br/>
+&#09;int (*probe)(struct i2c_client *, const struct i2c_device_id *); &nbsp; //注册I2C driver时，设备与driver匹配时的回掉，probe函数完成driver·的初始化<br/>
+&#09;int (*remove)(struct i2c_client *);<br/>
+<br/>
+&#09;/* driver model interfaces that don't relate to enumeration &nbsp;*/<br/>
+&#09;void (*shutdown)(struct i2c_client *);<br/>
+&#09;int (*suspend)(struct i2c_client *, pm_message_t mesg);<br/>
+&#09;int (*resume)(struct i2c_client *);<br/>
+<br/>
+&#09;/* Alert callback, for example for the SMBus alert protocol.<br/>
+&#09; * The format and meaning of the data value depends on the protocol.<br/>
+&#09; * For the SMBus alert protocol, there is a single bit of data passed<br/>
+&#09; * as the alert response's low bit ("event flag").<br/>
+&#09; */<br/>
+&#09;void (*alert)(struct i2c_client *, unsigned int data);<br/>
+<br/>
+&#09;/* a ioctl like command that can be used to perform specific functions<br/>
+&#09; * with the device.<br/>
+&#09; */<br/>
+&#09;int (*command)(struct i2c_client *client, unsigned int cmd, void *arg);<br/>
+<br/>
+&#09;struct device_driver driver; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 设备驱动模型，会在bus/drivers/下的显示<br/>
+&#09;const struct i2c_device_id *id_table; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;目前无用，使用devietree时，match主要是匹配driver中的of_device_id<br/>
+<br/>
+&#09;/* Device detection callback for automatic device creation,目前已经不使用，以下3个是函数通过driver注册I2c core,通过遍历I2C bus的设备，匹配后创建adapter以及i2c client*/<br/>
+&#09;int (*detect)(struct i2c_client *, struct i2c_board_info *);<br/>
+&#09;const unsigned short *address_list;<br/>
+&#09;struct list_head clients;<br/>
+};<br/>
+<br/>
+struct i2c_client {<br/>
+&#09;unsigned short flags;&#09;&#09;/* div., see below&#09;&#09;*/<br/>
+&#09;unsigned short addr;&#09;&#09;/* chip address - NOTE: 7bit&#09;*/<br/>
+&#09;&#09;&#09;&#09;&#09;/* addresses are stored in the&#09;*/<br/>
+&#09;&#09;&#09;&#09;&#09;/* _LOWER_ 7 bits&#09;&#09;*/<br/>
+&#09;char name[I2C_NAME_SIZE];<br/>
+&#09;struct i2c_adapter *adapter;&#09;/* the adapter we sit on&#09;*/<br/>
+&#09;struct device dev;&#09;&#09;/* the device structure&#09;&#09;*/<br/>
+&#09;int irq;&#09;&#09;&#09;/* irq issued by device&#09;&#09;*/<br/>
+&#09;struct list_head detected;<br/>
+};<br/>
+<br/>
+struct i2c_board_info {<br/>
+&#09;char&#09;&#09;type[I2C_NAME_SIZE];<br/>
+&#09;unsigned short&#09;flags;<br/>
+&#09;unsigned short&#09;addr;<br/>
+&#09;void&#09;&#09;*platform_data;<br/>
+&#09;struct dev_archdata&#09;*archdata;<br/>
+&#09;struct device_node *of_node;<br/>
+&#09;struct acpi_dev_node acpi_node;<br/>
+&#09;int&#09;&#09;irq;<br/>
+};<br/>
+<br/>
+struct i2c_algorithm {<br/>
+&#09;/* If an adapter algorithm can't do I2C-level access, set master_xfer<br/>
+&#09; &nbsp; to NULL. If an adapter algorithm can do SMBus access, set<br/>
+&#09; &nbsp; smbus_xfer. If set to NULL, the SMBus protocol is simulated<br/>
+&#09; &nbsp; using common I2C messages */<br/>
+&#09;/* master_xfer should return the number of messages successfully<br/>
+&#09; &nbsp; processed, or a negative value on error */<br/>
+&#09;int (*master_xfer)(struct i2c_adapter *adap, struct i2c_msg *msgs,<br/>
+&#09;&#09;&#09; &nbsp; int num);<br/>
+&#09;int (*smbus_xfer) (struct i2c_adapter *adap, u16 addr,<br/>
+&#09;&#09;&#09; &nbsp; unsigned short flags, char read_write,<br/>
+&#09;&#09;&#09; &nbsp; u8 command, int size, union i2c_smbus_data *data);<br/>
+<br/>
+&#09;/* To determine what the adapter supports */<br/>
+&#09;u32 (*functionality) (struct i2c_adapter *);<br/>
+};<br/>
+<br/>
+struct i2c_adapter {<br/>
+&#09;struct module *owner;<br/>
+&#09;unsigned int class;&#09;&#09; &nbsp;/* classes to allow probing for */<br/>
+&#09;const struct i2c_algorithm *algo; /* the algorithm to access the bus */<br/>
+&#09;void *algo_data;<br/>
+<br/>
+&#09;/* data fields that are valid for all devices&#09;*/<br/>
+&#09;struct rt_mutex bus_lock;<br/>
+<br/>
+&#09;int timeout;&#09;&#09;&#09;/* in jiffies */<br/>
+&#09;int retries;<br/>
+&#09;struct device dev;&#09;&#09;/* the adapter device */<br/>
+<br/>
+&#09;int nr; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; //I2C bus number<br/>
+&#09;char name[48];<br/>
+&#09;struct completion dev_released;<br/>
+<br/>
+&#09;struct mutex userspace_clients_lock;<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; /*用户空间的client设备，通过sysfs中adapter 中/sys/bus/i2c/devices/i2c-0 中的名字为new_device 中的store新增i2c设备，并将其添加到对应的adapter中，*/<br/>
+&#09;struct list_head userspace_clients;<br/>
+<br/>
+&#09;struct i2c_bus_recovery_info *bus_recovery_info;<br/>
+};<br/>
+<br/>
+<br/>
+相关的API:<br/>
+#define i2c_add_driver(driver) \<br/>
+&#09;i2c_register_driver(THIS_MODULE, driver)<br/>
+向I2C核心注册一个i2C驱动(driver_register），将驱动挂载在I2C bus上,在/sys/bus/i2c/drivers生成一个目录。 I2C bus上会调用match，match 返回1，表示match成功，后执行bus-&gt;probe ，随后调用 driver-&gt;probe.<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+</body></html>

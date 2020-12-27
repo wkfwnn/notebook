@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Kobject</title>
+</head><body>相关的文件linux-3.16.82\lib\<b>kobject.c</b>&nbsp;linux-3.16.82\linux-3.16.82\include\linux\<b>kobject.h</b>&nbsp; &nbsp;\linux-3.16.82\include\linux\<b>kef.h</b>&nbsp;&#09;linux-3.16.82\linux-3.16.82\lib\<b>kobject_uevent.c<br/>
+</b><br/>
+<br/>
+<br/>
+相关的结构体<br/>
+@1<b>struct kobject</b>&nbsp;{<br/>
+&#09;const char&#09;&#09;*name;<br/>
+&#09;struct list_head&#09;entry;<br/>
+&#09;struct kobject&#09;&#09;*parent;<br/>
+&#09;struct kset&#09;&#09;*<b>kset</b>;<br/>
+&#09;struct kobj_type&#09;*<b>ktype</b>;<br/>
+&#09;struct kernfs_node&#09;*sd;<br/>
+&#09;struct kref&#09;&#09;<b>kref</b>;<br/>
+#ifdef CONFIG_DEBUG_KOBJECT_RELEASE<br/>
+&#09;struct delayed_work&#09;release;<br/>
+#endif<br/>
+&#09;unsigned int state_initialized:1;<br/>
+&#09;unsigned int state_in_sysfs:1;<br/>
+&#09;unsigned int state_add_uevent_sent:1;<br/>
+&#09;unsigned int state_remove_uevent_sent:1;<br/>
+&#09;unsigned int uevent_suppress:1;<br/>
+};<br/>
+@2<b>struct kset</b>&nbsp;{<br/>
+&#09;struct list_head list;<br/>
+&#09;spinlock_t list_lock;<br/>
+&#09;struct kobject kobj;<br/>
+&#09;const struct kset_uevent_ops *uevent_ops;<br/>
+};<br/>
+@3<b>struct kobj_type</b>&nbsp;{<br/>
+&#09;void (*release)(struct kobject *kobj);<br/>
+&#09;const struct sysfs_ops *sysfs_ops;<br/>
+&#09;struct attribute **default_attrs;<br/>
+&#09;const struct kobj_ns_type_operations *(*child_ns_type)(struct kobject *kobj);<br/>
+&#09;const void *(*namespace)(struct kobject *kobj);<br/>
+};&#09;<br/>
+@4 <b>struct kref</b>&nbsp;{<br/>
+&#09;atomic_t refcount;<br/>
+};<br/>
+<br/>
+相关的API<br/>
+kobject<br/>
+<br/>
+void kobject_init(struct kobject *kobj, struct kobj_type *ktype) <br/>
+int kobject_add(struct kobject *kobj, struct kobject *parent,<br/>
+&#09;&#09;const char *fmt, ...)<br/>
+<br/>
+int <b>kobject_init_and_add</b>(struct kobject *kobj, struct kobj_type *ktype,<br/>
+&#09;&#09;&#09; struct kobject *parent, const char *fmt, ...)<br/>
+void kobject_del(struct kobject *kobj);<br/>
+<img src="kobject_init_and_add.jpg" /><br/>
+<br/>
+void kset_init(struct kset *kset);<br/>
+int kset_register(struct kset *k);<br/>
+void kset_unregister(struct kset *k);<br/>
+/*动态申请kset,需要指定kset中的name，即sys目录下的名字，uevent_ops指定为ops,parent_kobj为父目录中的kobject<br/>
+函数的作用主要是在sys下创建name的目录，父目录是parent_kobj*/<br/>
+struct kset *kset_create_and_add(const char *name,<br/>
+&#09;&#09;&#09;&#09; const struct kset_uevent_ops *uevent_ops,<br/>
+&#09;&#09;&#09;&#09; struct kobject *parent_kobj)<br/>
+<img src="kobject_init_and_add.png" /><br/>
+<img src="kobject_init_and_add 2.png" /><br/>
+<br/>
+总结：<br/>
+1：sysfs的主要描述了设备总线内的数据结构以及拓扑<br/>
+2：每一个kobject对应/sys/下的目录，kobject与sysfs有密切的关系<br/>
+3：kset中也包含kobject，也是一个目录，kset表示一系列具有相同的特性的kobject，kset中可以包含子目录，也可以包含子文件<br/>
+4：kset中的list为kobject 中entry的链表头<br/>
+5：kobject以及kset中可以解决设备热插拔等的动作，每次针对/sys/ 目录下的创建新目录的时候，会调用kset_uevent_ops中的函数</body></html>

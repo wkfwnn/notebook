@@ -1,0 +1,51 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Driver</title>
+</head><body>相关的文件：<br/>
+linux-3.16.82\linux-3.16.82\include\linux\<b>device.h &nbsp; </b>linux-3.16.82\linux-3.16.82\drivers\base\<b>driver.c<br/>
+</b><b><br/>
+相关的结构体<br/>
+</b>struct device_driver {<br/>
+&#09;const char&#09;&#09;*name;<br/>
+&#09;struct bus_type&#09;&#09;*bus;<br/>
+<br/>
+&#09;struct module&#09;&#09;*owner;<br/>
+&#09;const char&#09;&#09;*mod_name;&#09;/* used for built-in modules */<br/>
+<br/>
+&#09;bool suppress_bind_attrs;&#09;/* disables bind/unbind via sysfs */<br/>
+<br/>
+&#09;const struct of_device_id&#09;*of_match_table;<br/>
+&#09;const struct acpi_device_id&#09;*acpi_match_table;<br/>
+<br/>
+&#09;int (*probe) (struct device *dev);<br/>
+&#09;int (*remove) (struct device *dev);<br/>
+&#09;void (*shutdown) (struct device *dev);<br/>
+&#09;int (*suspend) (struct device *dev, pm_message_t state);<br/>
+&#09;int (*resume) (struct device *dev);<br/>
+&#09;const struct attribute_group **groups;<br/>
+&nbsp; &nbsp; &nbsp; &nbsp;/*关于电源管理的，赋值其ops，包含其它的driver中，建议初始化其ops，总线*/<br/>
+&#09;const struct dev_pm_ops *pm;<br/>
+<br/>
+&#09;struct driver_private *p;<br/>
+};<br/>
+<br/>
+struct driver_attribute {<br/>
+&#09;struct attribute attr;<br/>
+&#09;ssize_t (*show)(struct device_driver *driver, char *buf);<br/>
+&#09;ssize_t (*store)(struct device_driver *driver, const char *buf,<br/>
+&#09;&#09;&#09; size_t count);<br/>
+};<br/>
+<br/>
+相关的API：<br/>
+extern int __must_check driver_register(struct device_driver *drv);<br/>
+extern void driver_unregister(struct device_driver *drv);<br/>
+<br/>
+extern struct device_driver *driver_find(const char *name,<br/>
+&#09;&#09;&#09;&#09;&#09; struct bus_type *bus);<br/>
+extern int driver_probe_done(void);<br/>
+extern void wait_for_device_probe(void);<b><br/>
+</b><b><img src="driver.png" /><br/>
+勘误：@6：创建uevent的文件<br/>
+</b></body></html>

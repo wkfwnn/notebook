@@ -1,0 +1,20 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>input_event</title>
+</head><body>void input_event(struct input_dev *dev,<br/>
+&#09;&#09; unsigned int type, unsigned int code, int value)<br/>
+{<br/>
+&#09;unsigned long flags;<br/>
+&nbsp; &nbsp; /*測試是否input_dev是否支持該事件,可以通過__set_bit(KEY_POWER, info-&gt;idev-&gt;keybit)來实现*/<br/>
+&#09;if (is_event_supported(type, dev-&gt;evbit, EV_MAX)) {<br/>
+<br/>
+&#09;&#09;spin_lock_irqsave(&amp;dev-&gt;event_lock, flags);<br/>
+&#09;&#09;input_handle_event(dev, type, code, value);<br/>
+&#09;&#09;spin_unlock_irqrestore(&amp;dev-&gt;event_lock, flags);<br/>
+&#09;}<br/>
+}<br/>
+整个调用流程是：<br/>
+input_event-&gt;input_handle_event-&gt;input_pass_values-&gt;handler-&gt;event or handler-&gt;events<br/>
+</body></html>

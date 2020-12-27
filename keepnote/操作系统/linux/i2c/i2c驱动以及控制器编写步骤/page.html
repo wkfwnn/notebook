@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>I2C驱动以及控制器编写步骤</title>
+</head><body>I2C 设备驱动编写方法：<br/>
+1.定义一个struct i2c_driver <b>temp<br/>
+</b><b>2.</b>赋值temp，赋值name，probe,remove,driver中的name，以及of_match_table(和device tree相关)，如果没有device tree，则赋值id_table，通过name来进行match，赋值driver中的pm的fops（建议），或者初始化i2c 的driversuspend或者resume<br/>
+3.调用i2c_add_driver。<br/>
+4.调用I2c_transfer(I2c msg);发送数据<br/>
+<br/>
+CONFIG_PM_SLEEP 关于power manger<br/>
+<br/>
+I2C 控制器驱动:<br/>
+<br/>
+定义platform_driver xxx_i2c_driver<br/>
+例如：<br/>
+static struct platform_driver s3c24xx_i2c_driver = {<br/>
+&#09;.probe&#09;&#09;= s3c24xx_i2c_probe,<br/>
+&#09;.remove&#09;&#09;= s3c24xx_i2c_remove,<br/>
+&#09;.id_table&#09;= s3c24xx_driver_ids,<br/>
+&#09;.driver&#09;&#09;= {<br/>
+&#09;&#09;.owner&#09;= THIS_MODULE,<br/>
+&#09;&#09;.name&#09;= "s3c-i2c",<br/>
+&#09;&#09;.pm&#09;= S3C24XX_DEV_PM_OPS,<br/>
+&#09;&#09;.of_match_table = of_match_ptr(s3c24xx_i2c_match), &nbsp;使用device Tree<br/>
+<br/>
+&#09;},<br/>
+};<br/>
+<br/>
+@2probe回调函数中,读取设备树I2C节点参数，初始化注册一个I2C adapter<br/>
+<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; i2c-&gt;adap.owner &nbsp; = THIS_MODULE;<br/>
+&#09;i2c-&gt;adap.algo &nbsp; &nbsp;= &amp;s3c24xx_i2c_algorithm; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; //赋值真正的传输<br/>
+&#09;i2c-&gt;adap.retries = 2; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; //I2C 控制器传输retry此处<br/>
+&#09;i2c-&gt;adap.class &nbsp; = I2C_CLASS_HWMON | I2C_CLASS_SPD | I2C_CLASS_DEPRECATED;<br/>
+&#09;i2c-&gt;tx_setup &nbsp; &nbsp; = 50;<br/>
+@3注册adapter<br/>
+&nbsp; &nbsp;<br/>
+</body></html>

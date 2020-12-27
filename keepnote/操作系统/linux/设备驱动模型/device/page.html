@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Device</title>
+</head><body>相关的文件:<br/>
+linux-3.16.82\linux-3.16.82\include\linux\<b>device.h</b>&nbsp; &nbsp; linux-3.16.82\linux-3.16.82\drivers\base\<b>core.c<br/>
+</b><b><br/>
+</b>相关的结构体<br/>
+@1:<br/>
+struct device_type {<br/>
+&#09;const char *name;<br/>
+&#09;const struct attribute_group **groups;<br/>
+&#09;int (*uevent)(struct device *dev, struct kobj_uevent_env *env);<br/>
+&#09;char *(*devnode)(struct device *dev, umode_t *mode,<br/>
+&#09;&#09;&#09; kuid_t *uid, kgid_t *gid);<br/>
+&#09;void (*release)(struct device *dev);<br/>
+<br/>
+&#09;const struct dev_pm_ops *pm;<br/>
+};<br/>
+@2:<br/>
+struct device_attribute {<br/>
+&#09;struct attribute&#09;attr;<br/>
+&#09;ssize_t (*show)(struct device *dev, struct device_attribute *attr,<br/>
+&#09;&#09;&#09;char *buf);<br/>
+&#09;ssize_t (*store)(struct device *dev, struct device_attribute *attr,<br/>
+&#09;&#09;&#09; const char *buf, size_t count);<br/>
+};<br/>
+<br/>
+@3:<br/>
+struct device {<br/>
+&#09;struct device&#09;&#09;*parent;<br/>
+<br/>
+&#09;struct device_private&#09;*p;<br/>
+<br/>
+&#09;struct kobject kobj;<br/>
+&#09;const char&#09;&#09;*init_name; /* initial name of the device */<br/>
+&#09;const struct device_type *type;<br/>
+<br/>
+&#09;struct mutex&#09;&#09;mutex;&#09;/* mutex to synchronize calls to<br/>
+&#09;&#09;&#09;&#09;&#09; * its driver.<br/>
+&#09;&#09;&#09;&#09;&#09; */<br/>
+<br/>
+&#09;struct bus_type&#09;*bus;&#09;&#09;/* type of bus device is on */<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; /*driver_register的时候会进行match，match之后会将driver = 指定的驱动程序，完成绑定动作*/<br/>
+&#09;struct device_driver *driver;&#09;/* which driver has allocated this<br/>
+&#09;&#09;&#09;&#09;&#09; &nbsp; device */<br/>
+&#09;void&#09;&#09;*platform_data;&#09;/* Platform specific data, device<br/>
+&#09;&#09;&#09;&#09;&#09; &nbsp; core doesn't touch it */<br/>
+&#09;void&#09;&#09;*driver_data;&#09;/* Driver data, set and get with<br/>
+&#09;&#09;&#09;&#09;&#09; &nbsp; dev_set/get_drvdata */<br/>
+&#09;struct dev_pm_info&#09;power;<br/>
+&#09;struct dev_pm_domain&#09;*pm_domain;<br/>
+<br/>
+#ifdef CONFIG_PINCTRL<br/>
+&#09;struct dev_pin_info&#09;*pins;<br/>
+#endif<br/>
+<br/>
+#ifdef CONFIG_NUMA<br/>
+&#09;int&#09;&#09;numa_node;&#09;/* NUMA node this device is close to */<br/>
+#endif<br/>
+&#09;u64&#09;&#09;*dma_mask;&#09;/* dma mask (if dma'able device) */<br/>
+&#09;u64&#09;&#09;coherent_dma_mask;/* Like dma_mask, but for<br/>
+&#09;&#09;&#09;&#09;&#09; &nbsp; &nbsp; alloc_coherent mappings as<br/>
+&#09;&#09;&#09;&#09;&#09; &nbsp; &nbsp; not all hardware supports<br/>
+&#09;&#09;&#09;&#09;&#09; &nbsp; &nbsp; 64 bit addresses for consistent<br/>
+&#09;&#09;&#09;&#09;&#09; &nbsp; &nbsp; allocations such descriptors. */<br/>
+&#09;unsigned long&#09;dma_pfn_offset;<br/>
+<br/>
+&#09;struct device_dma_parameters *dma_parms;<br/>
+<br/>
+&#09;struct list_head&#09;dma_pools;&#09;/* dma pools (if dma'ble) */<br/>
+<br/>
+&#09;struct dma_coherent_mem&#09;*dma_mem; /* internal for coherent mem<br/>
+&#09;&#09;&#09;&#09;&#09; &nbsp; &nbsp; override */<br/>
+#ifdef CONFIG_DMA_CMA<br/>
+&#09;struct cma *cma_area;&#09;&#09;/* contiguous memory area for dma<br/>
+&#09;&#09;&#09;&#09;&#09; &nbsp; allocations */<br/>
+#endif<br/>
+&#09;/* arch specific additions */<br/>
+&#09;struct dev_archdata&#09;archdata;<br/>
+&nbsp; &nbsp; &nbsp; &nbsp;/*设备节点，不为空时，表明有对应的device Tree*/<br/>
+&#09;struct device_node&#09;*of_node; /* associated device tree node */<br/>
+&#09;struct acpi_dev_node&#09;acpi_node; /* associated ACPI device node */<br/>
+<br/>
+&#09;dev_t&#09;&#09;&#09;devt;&#09;/* dev_t, creates the sysfs "dev" 存在devt的时，会在/dev下创建节点*/<br/>
+&#09;u32&#09;&#09;&#09;id;&#09;/* device instance */<br/>
+<br/>
+&#09;spinlock_t&#09;&#09;devres_lock;<br/>
+&#09;struct list_head&#09;devres_head;<br/>
+<br/>
+&#09;struct klist_node&#09;knode_class;<br/>
+&#09;struct class&#09;&#09;*class;<br/>
+&#09;const struct attribute_group **groups;&#09;/* optional groups */<br/>
+<br/>
+&#09;void&#09;(*release)(struct device *dev);<br/>
+&#09;struct iommu_group&#09;*iommu_group;<br/>
+<br/>
+&#09;bool&#09;&#09;&#09;offline_disabled:1;<br/>
+&#09;bool&#09;&#09;&#09;offline:1;<br/>
+};<br/>
+<br/>
+@4<br/>
+struct device_private {<br/>
+&#09;struct klist klist_children;<br/>
+&#09;struct klist_node knode_parent;<br/>
+&#09;struct klist_node knode_driver;<br/>
+&#09;struct klist_node knode_bus;<br/>
+&#09;struct list_head deferred_probe;<br/>
+&#09;struct device *device;<br/>
+};<br/>
+相关的API<br/>
+extern int device_create_file(struct device *device,<br/>
+&#09;&#09;&#09; &nbsp; &nbsp; &nbsp;const struct device_attribute *entry);<br/>
+extern void device_remove_file(struct device *dev,<br/>
+&#09;&#09;&#09; &nbsp; &nbsp; &nbsp; const struct device_attribute *attr);<br/>
+extern bool device_remove_file_self(struct device *dev,<br/>
+&#09;&#09;&#09;&#09; &nbsp; &nbsp;const struct device_attribute *attr);<br/>
+extern int __must_check device_create_bin_file(struct device *dev,<br/>
+&#09;&#09;&#09;&#09;&#09;const struct bin_attribute *attr);<br/>
+extern void device_remove_bin_file(struct device *dev,<br/>
+&#09;&#09;&#09;&#09; &nbsp; const struct bin_attribute *attr);<br/>
+/*定义在core.c中，实际会类似于device_register*/<br/>
+struct device *device_create(struct class *class, struct device *parent,<br/>
+&#09;&#09;&#09; &nbsp; &nbsp; dev_t devt, void *drvdata, const char *fmt, ...)<br/>
+<br/>
+<br/>
+<br/>
+device_create_file分析:<br/>
+<img src="device.png" /><br/>
+<br/>
+<br/>
+<br/>
+extern int __must_check device_register(struct device *dev);<br/>
+extern void device_unregister(struct device *dev);<br/>
+extern void device_initialize(struct device *dev);<br/>
+extern int __must_check device_add(struct device *dev);<br/>
+extern void device_del(struct device *dev);<br/>
+<img src="device(1).png" /><br/>
+</body></html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>FrameBuf</title>
+</head><body>framebuf 相关的目录:<br/>
+drivers/video/fbdev/core<br/>
+linux/include/fb.h<br/>
+<br/>
+相关的文件：<br/>
+fbmem.c&#09;drivers\video\fbdev\core<br/>
+1.提供注册的framebuf，构造设备节点/dev/fb%d，保存设备注册的fb_info(registered_fb保存)，创建proc/fb文件，提供读写等操作，读取fb文件时，会遍历整个registered_fb中注册的fb_info信息<br/>
+（seq_printf(m, "%d %s\n", fi-&gt;node, fi-&gt;fix.id);）<br/>
+2.提供设备节点的打开关闭，读写以及控制等文件操作（fops，注意主要的操作在ioctl中。还有比较重要的是mmap操作。<br/>
+3.有关于显示log，调色板信息设置，log的翻转等<br/>
+<a href="nbk:///4da4f3ce-6667-4268-b956-65dc4c6ef48c"><br/>
+<br/>
+</a>fbsysfs.c&#09;video\fbdev\core<br/>
+1.主要提供sysfs的接口，通过sysfs的接口，查看一些fb_info的一些属性，在注册framebuf时会同步调用<span style="font-size: 14pt"><i>fb_init_device</i></span>。<br/>
+2.提供了<span style="font-size: 14pt">framebuffer_alloc</span>以及<span style="font-size: 14pt">framebuffer_release</span>。<br/>
+3.如果使用了CONFIG_FB_BACKLIGHT，还能使用<span style="font-size: 14pt"><i>fb_bl_default_curve</i></span>，填入最小的值，最大的值，自动将fb_info-&gt;bl_curve中填入背光值，产生线性的背光曲线<br/>
+<br/>
+<br/>
+skeletonfb.c&#09;video\fbdev （骨架程序，提供示例代码）<br/>
+1.主要是注册一个fb的主要步骤，是一个示例框架，写framebuf驱动的时候可以参考该代码<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+</body></html>

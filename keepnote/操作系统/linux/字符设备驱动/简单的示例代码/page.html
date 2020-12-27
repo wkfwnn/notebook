@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>test_code</title>
+</head><body><br/>
+1.c中调用，完成了字符设备的注册<br/>
+register_chrdev(0, DEVICE_NAME, &amp;fops);<br/>
+<br/>
+几种方式：<br/>
+1.register_chrdev<br/>
+2.register_chrdev_region-&gt;cdev_init-&gt;cdev_add &nbsp; 使用major number 是已知的<br/>
+3.alloc_chrdev_region-&gt;cdev_init-&gt;cdev_add &nbsp; &nbsp; &nbsp;使用major number 为系统自动分配（填入0参数）<br/>
+<br/>
+<br/>
+测试code 使用方式：<br/>
+<br/>
+sudo insmod 1.ko,2.ko,3.ko<br/>
+查看/var/log/kern.log,会有如下打印<br/>
+Feb 21 22:02:24 carl kernel: [44981.385644] I was assigned major number 239. To talk to<br/>
+Feb 21 22:02:24 carl kernel: [44981.385647] the driver, create a dev file with<br/>
+Feb 21 22:02:24 carl kernel: [44981.385649] 'mknod /dev/chardev c 239 0'.<br/>
+Feb 21 22:02:24 carl kernel: [44981.385650] Try various minor numbers. Try to cat and echo to<br/>
+Feb 21 22:02:24 carl kernel: [44981.385650] the device file.<br/>
+Feb 21 22:02:24 carl kernel: [44981.385651] Remove the device file and module when done.<br/>
+<br/>
+sudo mknod /dev/chardev c 239 0<br/>
+<br/>
+<br/>
+执行命令<br/>
+cat /dev/chardev &nbsp;<br/>
+输出I already told you 0 times Hello world!<br/>
+<br/>
+写入数据<br/>
+sudo chmod 666 /dev/chardev 　更改字符设备文件为rw mode <br/>
+echo “hello” &gt; /dev/chardev<br/>
+<br/>
+特别注意：使用insmod &nbsp;*.ko 的时候，需要将系统先删除设备文件，然后再移除module，否则会导致系统异常奔溃<br/>
+<br/>
+函数参数解析:<br/>
+@1 from :from 中必须包含major number，MKDEV(COMEDI_MAJOR, 0),其中COMEDI_MAJOR为已知的major number，0 表示baseminor，表示basminor是从0开始的，当然也可以指定baseminor 为其它的起始值<br/>
+@2 count:表示一个major可以支持几个相同的子设备，即从baseminor开始计数<br/>
+@3 name：字符串,访问设备的时候不是根据name去查找的，而是通过设备号去查找，所以name只是一个随机字符串<br/>
+int register_chrdev_region(dev_t from, unsigned count, const char *name)<br/>
+<br/>
+@1 from:和register_chrdev_region相对应，但是可以指定不同的baseminor，比如注册的时候使用0的baseminor，注销的时候可以使用1的baseminor<br/>
+@2 count：和register_chrdev_region相对应，表示从baseminor开始的几个<br/>
+void unregister_chrdev_region(dev_t from, unsigned count)<br/>
+@1：dev： 表示未知的dev，动态申请的<br/>
+@2：baseminor：从设备号从baseminor开始<br/>
+@3：count：从baseminor 计数count个<br/>
+@4：name: 字符串<br/>
+int alloc_chrdev_region(dev_t *dev, unsigned baseminor, unsigned count,<br/>
+&#09;&#09;&#09;const char *name)<br/>
+<br/>
+@1 cdev: cdev 的结构体<br/>
+@2 fops: fops 文件操作指针，会将fops赋值给cdev-&gt;ops<br/>
+void cdev_init(struct cdev *cdev, const struct file_operations *fops)<br/>
+<br/>
+@1:cdev 申请，可以使用自定义的cdev 结构体，也可以使用系统的cdev_alloc 申请cdev<br/>
+struct cdev *cdev_alloc(void)<br/>
+@1 cdev 释放，释放申请的cdev<br/>
+void cdev_del(struct cdev *);<br/>
+@1 p:cdev 的结构体，<br/>
+@2 dev: 设备号<br/>
+@3 count:添加count个数的设备，count设备个数不能超过之前的注册的个数，可以少于。如果之前申请的是64个，add &nbsp;count为5个，那么在访问设备的时候，只能访问到5个设备<br/>
+int cdev_add(struct cdev *p, dev_t dev, unsigned count)<br/>
+@1：major == 0 动态申请<br/>
+@2 baseminor ：等同于register_chrdev_region 中baseminor参数<br/>
+@3 count：等同于register_chrdev_region 中count参数<br/>
+@4 name：等同于register_chrdev_region &nbsp;中name 参数<br/>
+@5 fops: 文件操作指针<br/>
+注意早期register_chrdev函数就是通过调用__register_chrdev 实现的，所以使用的时候尽量使用register_chrdev函数<br/>
+int __register_chrdev(unsigned int major, unsigned int baseminor,<br/>
+&#09;&#09; &nbsp; &nbsp; &nbsp;unsigned int count, const char *name,<br/>
+&#09;&#09; &nbsp; &nbsp; &nbsp;const struct file_operations *fops)<br/>
+注意调用函数的时候，为了避免函数参数不同，所以要成对调用，register_chrdev ===== unregister_chrdev ，而 __register_chrdev===__unregister_chrdev<br/>
+void __unregister_chrdev(unsigned int major, unsigned int baseminor,<br/>
+&#09;&#09;&#09; unsigned int count, const char *name)</body></html>

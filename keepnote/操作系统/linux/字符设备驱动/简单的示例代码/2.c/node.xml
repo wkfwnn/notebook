@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node>
+<version>6</version>
+<dict>
+  <key>title</key><string>2.c</string>
+  <key>payload_filename</key><string>2.c</string>
+  <key>nodeid</key><string>46f0f5f5-0f1f-4f6e-a085-c858e5d68a03</string>
+  <key>modified_time</key><integer>1585753034</integer>
+  <key>order</key><integer>2</integer>
+  <key>version</key><integer>6</integer>
+  <key>content_type</key><string>text/plain</string>
+  <key>created_time</key><integer>1582294419</integer>
+  <key>info_sort_dir</key><integer>1</integer>
+  <key>info_sort</key><string>order</string>
+</dict>
+</node>

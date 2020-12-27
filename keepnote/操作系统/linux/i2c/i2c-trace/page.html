@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>I2C-Trace</title>
+</head><body>Add tracepoints into the I2C message transfer function to retrieve the message<br/>
+sent or received. &nbsp;The following config options must be turned on to make use<br/>
+of the facility:<br/>
+<br/>
+&#09;CONFIG_FTRACE<br/>
+&#09;CONFIG_ENABLE_DEFAULT_TRACERS<br/>
+<br/>
+The I2C tracepoint can be enabled thusly:<br/>
+<br/>
+&#09;echo 1 &gt;/sys/kernel/debug/tracing/events/i2c/enable<br/>
+<br/>
+and will dump messages that can be viewed in<b>&nbsp;/sys/kernel/debug/tracing/trace</b><br/>
+that look like:<br/>
+<br/>
+&#09;... i2c_write: i2c-5 #0 a=044 f=0000 l=2 [02-14]<br/>
+&#09;... i2c_read: i2c-5 #1 a=044 f=0001 l=4<br/>
+&#09;... i2c_reply: i2c-5 #1 a=044 f=0001 l=4 [33-00-00-00]<br/>
+&#09;... i2c_result: i2c-5 n=2 ret=2<br/>
+<br/>
+formatted as:<br/>
+<br/>
+&#09;i2c-&lt;adapter-nr&gt;<br/>
+&#09;#&lt;message-array-index&gt;<br/>
+&#09;a=&lt;addr&gt;<br/>
+&#09;f=&lt;flags&gt;<br/>
+&#09;l=&lt;datalen&gt;<br/>
+&#09;n=&lt;message-array-size&gt;<br/>
+&#09;ret=&lt;result&gt;<br/>
+&#09;[&lt;data&gt;]<br/>
+<br/>
+The operation is done between the i2c_write/i2c_read lines and the i2c_reply<br/>
+and i2c_result lines so that if the hardware hangs, the trace buffer can be<br/>
+consulted to determine the problematic operation.<br/>
+<br/>
+The adapters to be traced can be selected by something like:<br/>
+<br/>
+&#09;echo adapter_nr==1 &gt;/sys/kernel/debug/tracing/events/i2c/filter<br/>
+<br/>
+These changes are based on code from Steven Rostedt.<br/>
+</body></html>

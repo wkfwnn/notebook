@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>I2C device tree</title>
+</head><body>i2c1: i2c@400a0000 {<br/>
+&#09;&#09;/* ... master properties skipped ... */<br/>
+&#09;&#09;clock-frequency = &lt;100000&gt;;<br/>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;status = "okay";<br/>
+&#09;&#09;flash@50 {<br/>
+&#09;&#09;&#09;compatible = "atmel,24c256";<br/>
+&#09;&#09;&#09;reg = &lt;0x50&gt;;<br/>
+&#09;&#09;};<br/>
+<br/>
+&#09;&#09;pca9532: gpio@60 {<br/>
+&#09;&#09;&#09;compatible = "nxp,pca9532";<br/>
+&#09;&#09;&#09;gpio-controller;<br/>
+&#09;&#09;&#09;#gpio-cells = &lt;2&gt;;<br/>
+&#09;&#09;&#09;reg = &lt;0x60&gt;;<br/>
+&#09;&#09;};<br/>
+&#09;};<br/>
+<br/>
+clock-frequency :i2c的时钟频率<br/>
+reg:i2c的7bit addr<br/>
+compatible:i2c 设备的name<br/>
+status:状态，okay表示使能对应的i2c<br/>
+<br/>
+对于以上的节点：在三星以及rookchip平台上会是以下的结果：<br/>
+<br/>
+I2C 控制器驱动：platformdriver xxx_driver<br/>
+<br/>
+xxx.driver中的driver中of_match_table的会匹配device tree中的I2C 节点compatible属性.<br/>
+<br/>
+xxx_driver中会注册I2C adapter，adapter会申请I2C client，I2C client 中会将其对应的deviceTree中的子设备创建，一个I2C client对饮一个I2C 的从设备，将设备属性与I2C driver进行匹配，然后绑定.<br/>
+</body></html>

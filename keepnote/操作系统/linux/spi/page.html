@@ -1,0 +1,227 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>SPI</title>
+</head><body>SPI 总线： The "Serial Peripheral Interface" is a low level synchronous protocol,including select, clock, data in, data out <br/>
+<br/>
+<br/>
+<div style="text-align: left">通俗讲解:<br/>
+SPI的子系统非常类似于I2C的子系统<br/>
+</div>spi_driver <div style="text-align: left">&nbsp;driver 代表一类设备的驱动，</div>&nbsp;spi_device 代表一个SPI的设备，实际的设备,SPI master 表示一个SPI 控制器的驱动<br/>
+spi_device是由spi_master创建的，spi master会匹配devicetree中关于spi总线的描述, spi_device会匹配devicetree中spi总线上的spi设备节点<br/>
+<br/>
+主要涉及的文件:<br/>
+spi.h&#09;\linux-3.16.82\linux-3.16.82\include\linux\spi<br/>
+spi.c&#09;linux-3.16.82\linux-3.16.82\drivers\spi<br/>
+spi.h&#09;\linux-3.16.82\linux-3.16.82\include\trace\events<br/>
+<br/>
+<br/>
+<br/>
+相关的结构体：<br/>
+struct spi_device {<br/>
+&#09;struct device&#09;&#09;dev;<br/>
+&#09;struct spi_master&#09;*master;<br/>
+&#09;u32&#09;&#09;&#09;max_speed_hz;<br/>
+&#09;u8&#09;&#09;&#09;chip_select;<br/>
+&#09;u8&#09;&#09;&#09;bits_per_word;<br/>
+&#09;u16&#09;&#09;&#09;mode;<br/>
+#define&#09;SPI_CPHA&#09;0x01&#09;&#09;&#09;/* clock phase */<br/>
+#define&#09;SPI_CPOL&#09;0x02&#09;&#09;&#09;/* clock polarity */<br/>
+#define&#09;SPI_MODE_0&#09;(0|0)&#09;&#09;&#09;/* (original MicroWire) */<br/>
+#define&#09;SPI_MODE_1&#09;(0|SPI_CPHA)<br/>
+#define&#09;SPI_MODE_2&#09;(SPI_CPOL|0)<br/>
+#define&#09;SPI_MODE_3&#09;(SPI_CPOL|SPI_CPHA)<br/>
+#define&#09;SPI_CS_HIGH&#09;0x04&#09;&#09;&#09;/* chipselect active high? */<br/>
+#define&#09;SPI_LSB_FIRST&#09;0x08&#09;&#09;&#09;/* per-word bits-on-wire */<br/>
+#define&#09;SPI_3WIRE&#09;0x10&#09;&#09;&#09;/* SI/SO signals shared */<br/>
+#define&#09;SPI_LOOP&#09;0x20&#09;&#09;&#09;/* loopback mode */<br/>
+#define&#09;SPI_NO_CS&#09;0x40&#09;&#09;&#09;/* 1 dev/bus, no chipselect */<br/>
+#define&#09;SPI_READY&#09;0x80&#09;&#09;&#09;/* slave pulls low to pause */<br/>
+#define&#09;SPI_TX_DUAL&#09;0x100&#09;&#09;&#09;/* transmit with 2 wires */<br/>
+#define&#09;SPI_TX_QUAD&#09;0x200&#09;&#09;&#09;/* transmit with 4 wires */<br/>
+#define&#09;SPI_RX_DUAL&#09;0x400&#09;&#09;&#09;/* receive with 2 wires */<br/>
+#define&#09;SPI_RX_QUAD&#09;0x800&#09;&#09;&#09;/* receive with 4 wires */<br/>
+&#09;int&#09;&#09;&#09;irq;<br/>
+&#09;void&#09;&#09;&#09;*controller_state;<br/>
+&#09;void&#09;&#09;&#09;*controller_data;<br/>
+&#09;char&#09;&#09;&#09;modalias[SPI_NAME_SIZE];<br/>
+&#09;int&#09;&#09;&#09;cs_gpio;&#09;/* chip select gpio */<br/>
+<br/>
+&#09;/*<br/>
+&#09; * likely need more hooks for more protocol options affecting how<br/>
+&#09; * the controller talks to each chip, like:<br/>
+&#09; * &nbsp;- memory packing (12 bit samples into low bits, others zeroed)<br/>
+&#09; * &nbsp;- priority<br/>
+&#09; * &nbsp;- drop chipselect after each word<br/>
+&#09; * &nbsp;- chipselect delays<br/>
+&#09; * &nbsp;- ...<br/>
+&#09; */<br/>
+};<br/>
+spi_device 代表一个SPI的从设备<br/>
+<br/>
+<br/>
+<br/>
+struct spi_driver {<br/>
+&#09;const struct spi_device_id *id_table;<br/>
+&#09;int&#09;&#09;&#09;(*probe)(struct spi_device *spi);<br/>
+&#09;int&#09;&#09;&#09;(*remove)(struct spi_device *spi);<br/>
+&#09;void&#09;&#09;&#09;(*shutdown)(struct spi_device *spi);<br/>
+&#09;int&#09;&#09;&#09;(*suspend)(struct spi_device *spi, pm_message_t mesg);<br/>
+&#09;int&#09;&#09;&#09;(*resume)(struct spi_device *spi);<br/>
+&#09;struct device_driver&#09;driver;<br/>
+};<br/>
+spi_driver &nbsp;代表一个spi的驱动程序<br/>
+<br/>
+<br/>
+struct spi_master {<br/>
+&#09;struct device&#09;dev;<br/>
+<br/>
+&#09;struct list_head list;<br/>
+<br/>
+&#09;/* other than negative (== assign one dynamically), bus_num is fully<br/>
+&#09; * board-specific. &nbsp;usually that simplifies to being SOC-specific.<br/>
+&#09; * example: &nbsp;one SOC has three SPI controllers, numbered 0..2,<br/>
+&#09; * and one board's schematics might show it using SPI-2. &nbsp;software<br/>
+&#09; * would normally use bus_num=2 for that controller.<br/>
+&#09; */<br/>
+&#09;s16&#09;&#09;&#09;bus_num;<br/>
+<br/>
+&#09;/* chipselects will be integral to many controllers; some others<br/>
+&#09; * might use board-specific GPIOs.<br/>
+&#09; */<br/>
+&#09;u16&#09;&#09;&#09;num_chipselect;<br/>
+<br/>
+&#09;/* some SPI controllers pose alignment requirements on DMAable<br/>
+&#09; * buffers; let protocol drivers know about these requirements.<br/>
+&#09; */<br/>
+&#09;u16&#09;&#09;&#09;dma_alignment;<br/>
+<br/>
+&#09;/* spi_device.mode flags understood by this controller driver */<br/>
+&#09;u16&#09;&#09;&#09;mode_bits;<br/>
+<br/>
+&#09;/* bitmask of supported bits_per_word for transfers */<br/>
+&#09;u32&#09;&#09;&#09;bits_per_word_mask;<br/>
+#define SPI_BPW_MASK(bits) BIT((bits) - 1)<br/>
+#define SPI_BIT_MASK(bits) (((bits) == 32) ? ~0U : (BIT(bits) - 1))<br/>
+#define SPI_BPW_RANGE_MASK(min, max) (SPI_BIT_MASK(max) - SPI_BIT_MASK(min - 1))<br/>
+<br/>
+&#09;/* limits on transfer speed */<br/>
+&#09;u32&#09;&#09;&#09;min_speed_hz;<br/>
+&#09;u32&#09;&#09;&#09;max_speed_hz;<br/>
+<br/>
+&#09;/* other constraints relevant to this driver */<br/>
+&#09;u16&#09;&#09;&#09;flags;<br/>
+#define SPI_MASTER_HALF_DUPLEX&#09;BIT(0)&#09;&#09;/* can't do full duplex */<br/>
+#define SPI_MASTER_NO_RX&#09;BIT(1)&#09;&#09;/* can't do buffer read */<br/>
+#define SPI_MASTER_NO_TX&#09;BIT(2)&#09;&#09;/* can't do buffer write */<br/>
+#define SPI_MASTER_MUST_RX &nbsp; &nbsp; &nbsp;BIT(3)&#09;&#09;/* requires rx */<br/>
+#define SPI_MASTER_MUST_TX &nbsp; &nbsp; &nbsp;BIT(4)&#09;&#09;/* requires tx */<br/>
+<br/>
+&#09;/* lock and mutex for SPI bus locking */<br/>
+&#09;spinlock_t&#09;&#09;bus_lock_spinlock;<br/>
+&#09;struct mutex&#09;&#09;bus_lock_mutex;<br/>
+<br/>
+&#09;/* flag indicating that the SPI bus is locked for exclusive use */<br/>
+&#09;bool&#09;&#09;&#09;bus_lock_flag;<br/>
+<br/>
+&#09;/* Setup mode and clock, etc (spi driver may call many times).<br/>
+&#09; *<br/>
+&#09; * IMPORTANT: &nbsp;this may be called when transfers to another<br/>
+&#09; * device are active. &nbsp;DO NOT UPDATE SHARED REGISTERS in ways<br/>
+&#09; * which could break those transfers.<br/>
+&#09; */<br/>
+&#09;int&#09;&#09;&#09;(*setup)(struct spi_device *spi);<br/>
+<br/>
+&#09;/* bidirectional bulk transfers<br/>
+&#09; *<br/>
+&#09; * + The transfer() method may not sleep; its main role is<br/>
+&#09; * &nbsp; just to add the message to the queue.<br/>
+&#09; * + For now there's no remove-from-queue operation, or<br/>
+&#09; * &nbsp; any other request management<br/>
+&#09; * + To a given spi_device, message queueing is pure fifo<br/>
+&#09; *<br/>
+&#09; * + The master's main job is to process its message queue,<br/>
+&#09; * &nbsp; selecting a chip then transferring data<br/>
+&#09; * + If there are multiple spi_device children, the i/o queue<br/>
+&#09; * &nbsp; arbitration algorithm is unspecified (round robin, fifo,<br/>
+&#09; * &nbsp; priority, reservations, preemption, etc)<br/>
+&#09; *<br/>
+&#09; * + Chipselect stays active during the entire message<br/>
+&#09; * &nbsp; (unless modified by spi_transfer.cs_change != 0).<br/>
+&#09; * + The message transfers use clock and SPI mode parameters<br/>
+&#09; * &nbsp; previously established by setup() for this device<br/>
+&#09; */<br/>
+&#09;int&#09;&#09;&#09;(*transfer)(struct spi_device *spi,<br/>
+&#09;&#09;&#09;&#09;&#09;&#09;struct spi_message *mesg);<br/>
+<br/>
+&#09;/* called on release() to free memory provided by spi_master */<br/>
+&#09;void&#09;&#09;&#09;(*cleanup)(struct spi_device *spi);<br/>
+<br/>
+&#09;/*<br/>
+&#09; * Used to enable core support for DMA handling, if can_dma()<br/>
+&#09; * exists and returns true then the transfer will be mapped<br/>
+&#09; * prior to transfer_one() being called. &nbsp;The driver should<br/>
+&#09; * not modify or store xfer and dma_tx and dma_rx must be set<br/>
+&#09; * while the device is prepared.<br/>
+&#09; */<br/>
+&#09;bool&#09;&#09;&#09;(*can_dma)(struct spi_master *master,<br/>
+&#09;&#09;&#09;&#09;&#09; &nbsp; struct spi_device *spi,<br/>
+&#09;&#09;&#09;&#09;&#09; &nbsp; struct spi_transfer *xfer);<br/>
+<br/>
+&#09;/*<br/>
+&#09; * These hooks are for drivers that want to use the generic<br/>
+&#09; * master transfer queueing mechanism. If these are used, the<br/>
+&#09; * transfer() function above must NOT be specified by the driver.<br/>
+&#09; * Over time we expect SPI drivers to be phased over to this API.<br/>
+&#09; */<br/>
+&#09;bool&#09;&#09;&#09;&#09;queued;<br/>
+&#09;struct kthread_worker&#09;&#09;kworker;<br/>
+&#09;struct task_struct&#09;&#09;*kworker_task;<br/>
+&#09;struct kthread_work&#09;&#09;pump_messages;<br/>
+&#09;spinlock_t&#09;&#09;&#09;queue_lock;<br/>
+&#09;struct list_head&#09;&#09;queue;<br/>
+&#09;struct spi_message&#09;&#09;*cur_msg;<br/>
+&#09;bool&#09;&#09;&#09;&#09;busy;<br/>
+&#09;bool&#09;&#09;&#09;&#09;running;<br/>
+&#09;bool&#09;&#09;&#09;&#09;rt;<br/>
+&#09;bool&#09;&#09;&#09;&#09;auto_runtime_pm;<br/>
+&#09;bool &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;cur_msg_prepared;<br/>
+&#09;bool&#09;&#09;&#09;&#09;cur_msg_mapped;<br/>
+&#09;struct completion &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; xfer_completion;<br/>
+&#09;size_t&#09;&#09;&#09;&#09;max_dma_len;<br/>
+<br/>
+&#09;int (*prepare_transfer_hardware)(struct spi_master *master);<br/>
+&#09;int (*transfer_one_message)(struct spi_master *master,<br/>
+&#09;&#09;&#09;&#09; &nbsp; &nbsp;struct spi_message *mesg);<br/>
+&#09;int (*unprepare_transfer_hardware)(struct spi_master *master);<br/>
+&#09;int (*prepare_message)(struct spi_master *master,<br/>
+&#09;&#09;&#09; &nbsp; &nbsp; &nbsp; struct spi_message *message);<br/>
+&#09;int (*unprepare_message)(struct spi_master *master,<br/>
+&#09;&#09;&#09;&#09; struct spi_message *message);<br/>
+<br/>
+&#09;/*<br/>
+&#09; * These hooks are for drivers that use a generic implementation<br/>
+&#09; * of transfer_one_message() provied by the core.<br/>
+&#09; */<br/>
+&#09;void (*set_cs)(struct spi_device *spi, bool enable);<br/>
+&#09;int (*transfer_one)(struct spi_master *master, struct spi_device *spi,<br/>
+&#09;&#09;&#09; &nbsp; &nbsp;struct spi_transfer *transfer);<br/>
+<br/>
+&#09;/* gpio chip select */<br/>
+&#09;int&#09;&#09;&#09;*cs_gpios;<br/>
+<br/>
+&#09;/* DMA channels for use with core dmaengine helpers */<br/>
+&#09;struct dma_chan&#09;&#09;*dma_tx;<br/>
+&#09;struct dma_chan&#09;&#09;*dma_rx;<br/>
+<br/>
+&#09;/* dummy data for full duplex devices */<br/>
+&#09;void&#09;&#09;&#09;*dummy_rx;<br/>
+&#09;void&#09;&#09;&#09;*dummy_tx;<br/>
+};<br/>
+代表一个SPI 的控制器驱动<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+</body></html>
