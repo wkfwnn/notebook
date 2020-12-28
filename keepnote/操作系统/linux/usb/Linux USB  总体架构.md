@@ -20,6 +20,4 @@ linux usb 核心代码主要的目录为linux-xxx/drivers/usb/core，核心代�
 
 hcd 主要是用来驱动 usb host 控制器，负责数据的传输，以及相关usb 协议中的底层必要的硬件信号传输，类似phy，即链路层传输
 
-
-
 `
