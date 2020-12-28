@@ -14,7 +14,43 @@ linux usb 核心代码主要的目录为linux-xxx/drivers/usb/core，核心代�
 
 - 面向usb hub，对hub进行驱动
 
+   
   
+  
+
+## USB core
+
+核心代码位于/drivers/usb/core/下在c文件中，初始化函数`usb_init`，完成了以下几点功能
+
+- `usb_debugfs_init`，完成usb debugfs的初始化，主要是debugs根文件夹创建了usb的目录并创建devices的文件，并提供了其read以及poll函数，方便在user space上能够打印对应的usb总线上的devices
+
+​       `debugfs on /sys/kernel/debug type debugfs (rw,relatime)`通过mount指令即可获得
+
+- `bus_register(&usb_bus_type)` usb总线的注册，其中提供了match 函数，用来匹配设备与驱动，提供了uevent 的事件通知
+
+  ```
+  struct bus_type usb_bus_type = {
+      .name =     "usb",
+      .match =    usb_device_match,
+      .uevent =   usb_uevent,
+  };
+  ```
+
+- `bus_register_notifier(&usb_bus_type, &usb_bus_nb)`注册了总线在加入设备以及移除设备的回调函数
+
+- `usb_major_init`注册了一个字符设备，usb major是`#define USB_MAJOR           180`
+
+- `usb_register(&usbfs_driver);`注册一个用户空间可以访问的usb driver，
+
+  
+
+
+
+
+
+
+
+
 
 ## hcd 驱动（USB host controller driver）
 
